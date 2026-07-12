@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const { encrypt } = require('./crypto');
+const AdmZip = require('adm-zip');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 8080;
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(path.join(DATA_DIR, 'uploads'), { recursive: true });
+fs.mkdirSync(path.join(DATA_DIR, 'products'), { recursive: true });
 
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 let db = { admins: [], products: [], keys: [], clients: [], logs: [], settings: {} };
@@ -36,6 +37,7 @@ if (!db.admins.length) {
 if (!db.clients) db.clients = [];
 if (!db.logs) db.logs = [];
 if (!db.settings) db.settings = {};
+if (!db._tokens) db._tokens = {};
 
 const app = express();
 const upload = multer({ dest: path.join(DATA_DIR, 'uploads'), limits: { fileSize: 500 * 1024 * 1024 } });
@@ -62,30 +64,39 @@ app.post('/api/verify', (req, res) => {
   if (k.expires_at && new Date(k.expires_at) < new Date()) return res.status(403).json({ error: 'Key expired' });
   if (k.used && k.hwid !== hwid) { log('verify_locked', `${key} locked to ${k.hwid}`, req.ip); return res.status(403).json({ error: 'Key locked to another device' }); }
   if (!k.used) { k.used = true; k.hwid = hwid; save(); log('key_activate', `${key} -> ${product.name} (${hwid})`, req.ip); }
-  const hasExe = product.exe && fs.existsSync(product.exe);
-  const token = hasExe ? crypto.randomBytes(32).toString('hex') : null;
-  if (token) { db._tokens = db._tokens || {}; db._tokens[token] = { product_id: product.id, hwid, used: false, ts: Date.now() }; }
+  const hasProduct = product.files_dir && fs.existsSync(product.files_dir);
+  const token = hasProduct ? crypto.randomBytes(32).toString('hex') : null;
+  if (token) db._tokens[token] = { product_id: product.id, hwid, used: false, ts: Date.now() };
   log('verify_ok', `${key} on ${product.name}`, req.ip);
   const existing = db.clients.find(c => c.hwid === hwid);
   const info = { hwid, product: product.name, last_seen: new Date().toISOString() };
   if (existing) { Object.assign(existing, info); existing.visits = (existing.visits || 1) + 1; }
   else db.clients.push({ id: id(db.clients), ...info, first_seen: new Date().toISOString(), visits: 1 });
   save();
-  res.json({ success: true, product: { name: product.name, icon: product.icon, version: product.version }, downloadToken: token });
+  res.json({ success: true, product: { name: product.name, icon: product.icon, version: product.version }, runToken: token });
 });
 
-app.get('/api/product-dl/:token', (req, res) => {
-  const t = (db._tokens || {})[req.params.token];
-  if (!t || t.used) return res.status(404).json({ error: 'Invalid token' });
+// Product run - serves the product index.html (token protected)
+app.get('/api/run/:token', (req, res) => {
+  const t = db._tokens[req.params.token];
+  if (!t) return res.status(404).send('Invalid or expired token');
   const product = db.products.find(p => p.id === t.product_id);
-  if (!product || !product.exe || !fs.existsSync(product.exe)) return res.status(404).json({ error: 'File not found' });
-  t.used = true; save();
-  const raw = fs.readFileSync(product.exe);
-  const encrypted = encrypt(raw);
-  res.setHeader('Content-Type', 'application/octet-stream');
-  res.setHeader('Content-Disposition', `attachment; filename="${product.name}.vortex"`);
-  res.send(encrypted);
-  log('product_dl', `${product.name} -> ${t.hwid}`, req.ip);
+  if (!product || !product.files_dir || !fs.existsSync(product.files_dir)) return res.status(404).send('Product not found');
+  const indexPath = path.join(product.files_dir, 'index.html');
+  if (!fs.existsSync(indexPath)) return res.status(404).send('Product index.html not found');
+  res.sendFile(indexPath);
+});
+
+// Product static files (token protected)
+app.get('/api/run/:token/*', (req, res) => {
+  const t = db._tokens[req.params.token];
+  if (!t) return res.status(404).send('Invalid or expired token');
+  const product = db.products.find(p => p.id === t.product_id);
+  if (!product || !product.files_dir || !fs.existsSync(product.files_dir)) return res.status(404).send('Product not found');
+  const filePath = path.join(product.files_dir, req.params[0]);
+  if (!filePath.startsWith(product.files_dir)) return res.status(403).send('Forbidden');
+  if (!fs.existsSync(filePath)) return res.status(404).send('File not found');
+  res.sendFile(filePath);
 });
 
 // ========== AUTH ==========
@@ -118,7 +129,7 @@ app.get('/api/dashboard', auth, (req, res) => {
 
 app.get('/api/products', auth, (req, res) => res.json(db.products.sort((a, b) => b.id - a.id)));
 app.post('/api/products', auth, (req, res) => {
-  const p = { id: id(db.products), name: req.body.name, description: req.body.description || '', icon: req.body.icon || '', version: req.body.version || '1.0.0', status: 'active', exe: '', exe_name: '', exe_size: 0, created: new Date().toISOString() };
+  const p = { id: id(db.products), name: req.body.name, description: req.body.description || '', icon: req.body.icon || '', version: req.body.version || '1.0.0', status: 'active', files_dir: '', files_name: '', files_size: 0, created: new Date().toISOString() };
   db.products.push(p); save(); log('product_add', p.name, req.ip); res.json(p);
 });
 app.put('/api/products/:id', auth, (req, res) => {
@@ -128,18 +139,29 @@ app.put('/api/products/:id', auth, (req, res) => {
 });
 app.delete('/api/products/:id', auth, (req, res) => {
   const pid = +req.params.id;
-  db.products = db.products.filter(p => p.id !== pid);
+  const p = db.products.find(x => x.id === pid);
+  if (p && p.files_dir && fs.existsSync(p.files_dir)) try { fs.rmSync(p.files_dir, { recursive: true }); } catch {}
+  db.products = db.products.filter(x => x.id !== pid);
   db.keys = db.keys.filter(k => k.product_id !== pid);
   save(); log('product_delete', `#${pid}`, req.ip); res.json({ ok: true });
 });
-app.post('/api/products/:id/exe', auth, upload.single('exe'), (req, res) => {
+
+// Upload product files (zip)
+app.post('/api/products/:id/files', auth, upload.single('file'), (req, res) => {
   const p = db.products.find(x => x.id === +req.params.id);
   if (!p || !req.file) return res.status(404).json({ error: 'Not found' });
-  if (p.exe && fs.existsSync(p.exe)) try { fs.unlinkSync(p.exe); } catch {}
-  db.products.find(x => x.id === +req.params.id).exe = req.file.path;
-  db.products.find(x => x.id === +req.params.id).exe_name = req.file.originalname;
-  db.products.find(x => x.id === +req.params.id).exe_size = req.file.size;
-  save(); log('exe_upload', `${p.name}: ${req.file.originalname}`, req.ip); res.json({ ok: true });
+  try {
+    if (p.files_dir && fs.existsSync(p.files_dir)) fs.rmSync(p.files_dir, { recursive: true });
+    const extractDir = path.join(DATA_DIR, 'products', String(p.id));
+    fs.mkdirSync(extractDir, { recursive: true });
+    const zip = new AdmZip(req.file.path);
+    zip.extractAllTo(extractDir, true);
+    try { fs.unlinkSync(req.file.path); } catch {}
+    p.files_dir = extractDir;
+    p.files_name = req.file.originalname;
+    p.files_size = req.file.size;
+    save(); log('files_upload', `${p.name}: ${req.file.originalname}`, req.ip); res.json({ ok: true });
+  } catch (err) { res.status(400).json({ error: 'Invalid zip file: ' + err.message }); }
 });
 
 // ========== KEYS ==========
@@ -206,6 +228,12 @@ app.post('/api/password', auth, (req, res) => {
   if (current && !bcrypt.compareSync(current, a.password)) return res.status(403).json({ error: 'Wrong current password' });
   a.password = bcrypt.hashSync(password, 10); save(); log('password_change', a.username, req.ip); res.json({ ok: true });
 });
+
+// Cleanup tokens
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of Object.entries(db._tokens)) { if (now - v.ts > 600000) delete db._tokens[k]; }
+}, 60000);
 
 // ========== STATIC ==========
 

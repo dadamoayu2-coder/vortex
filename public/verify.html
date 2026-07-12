@@ -46,11 +46,6 @@
     .product-result .ver{font-size:12px;color:var(--text3);margin-top:2px}
     .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .progress{display:none;margin-top:14px}
-    .progress.show{display:block}
-    .progress-track{width:100%;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:6px}
-    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:3px;transition:width .3s;width:0}
-    .progress-text{font-size:12px;color:var(--text3);text-align:center}
     .status-row{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:12px;color:var(--text3)}
     .dot{width:8px;height:8px;border-radius:50%;background:#555;transition:all .3s}
     .dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
@@ -86,15 +81,10 @@
       <div class="ver" id="pVer"></div>
     </div>
 
-    <button class="btn btn-green" id="dlBtn" onclick="download()" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Download Product
+    <button class="btn btn-green" id="runBtn" onclick="runProduct()" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polygon points="5,3 19,12 5,21" fill="currentColor" stroke="none"/></svg>
+      Run Product
     </button>
-
-    <div id="progress" class="progress">
-      <div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
-      <div class="progress-text" id="ptext"></div>
-    </div>
 
     <div class="status-row">
       <span class="dot on" id="dot"></span>
@@ -104,7 +94,7 @@
 
   <script>
     const API = location.origin;
-    let dlToken = null, product = null, hwid = null;
+    let runToken = null, product = null, hwid = null;
 
     function makeHWID() {
       const c = [navigator.userAgent, screen.width+'x'+screen.height, screen.colorDepth, new Date().getTimezoneOffset(), navigator.language, navigator.hardwareConcurrency||0, navigator.platform];
@@ -119,12 +109,6 @@
       el.textContent = text;
     }
 
-    function showProgress(show, pct, text) {
-      const el = document.getElementById('progress');
-      if (show) { el.classList.add('show'); document.getElementById('pfill').style.width = pct+'%'; document.getElementById('ptext').textContent = text||''; }
-      else el.classList.remove('show');
-    }
-
     async function verify() {
       const key = document.getElementById('key').value.trim();
       if (!key) return showMsg('Enter a license key', 'err');
@@ -133,8 +117,7 @@
       btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Verifying...';
       document.getElementById('msg').className = 'msg';
       document.getElementById('productResult').classList.remove('show');
-      document.getElementById('dlBtn').style.display = 'none';
-      showProgress(false);
+      document.getElementById('runBtn').style.display = 'none';
       if (!hwid) hwid = makeHWID();
 
       try {
@@ -143,12 +126,12 @@
         if (d.success) {
           showMsg('License verified!', 'ok');
           product = d.product;
-          dlToken = d.downloadToken;
+          runToken = d.runToken;
           document.getElementById('pIcon').textContent = product.icon || '';
           document.getElementById('pName').textContent = product.name;
           document.getElementById('pVer').textContent = 'v'+(product.version||'1.0.0');
           document.getElementById('productResult').classList.add('show');
-          if (dlToken) document.getElementById('dlBtn').style.display = 'flex';
+          if (runToken) document.getElementById('runBtn').style.display = 'flex';
         } else showMsg(d.error || 'Failed', 'err');
       } catch { showMsg('Cannot connect to server', 'err'); }
 
@@ -156,37 +139,10 @@
       btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Verify License';
     }
 
-    async function download() {
-      if (!dlToken || !product) return;
-      const btn = document.getElementById('dlBtn');
-      btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Downloading...';
-      showProgress(true, 0, 'Connecting...');
-      try {
-        const r = await fetch(API+'/api/product-dl/'+dlToken);
-        if (!r.ok) throw new Error('Failed');
-        const ct = r.headers.get('content-type');
-        if (ct && ct.includes('application/json')) { const e = await r.json(); throw new Error(e.error||'Failed'); }
-        const len = parseInt(r.headers.get('content-length')||'0');
-        const reader = r.body.getReader();
-        const chunks = []; let rec = 0;
-        while (true) {
-          const {done, value} = await reader.read();
-          if (done) break;
-          chunks.push(value); rec += value.length;
-          if (len > 0) showProgress(true, Math.round(rec/len*100), Math.round(rec/len*100)+'%');
-        }
-        showProgress(true, 100, 'Saving...');
-        const blob = new Blob(chunks);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = (product.name||'product')+'.vortex';
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(url);
-        showMsg('Download started!', 'ok');
-      } catch(e) { showMsg('Download failed: '+e.message, 'err'); }
-      showProgress(false);
-      btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Product';
+    function runProduct() {
+      if (!runToken || !product) return;
+      window.open(API + '/api/run/' + runToken, '_blank');
+      showMsg('Running in new tab!', 'ok');
     }
 
     document.getElementById('key').addEventListener('keydown', e => { if (e.key==='Enter') verify(); });

@@ -196,7 +196,7 @@
 
   <div class="main hidden" id="pg-products">
     <div class="page-title"><div><h2>Products</h2><p>Manage your products</p></div><button class="btn-sm" onclick="showAddProduct()">+ New Product</button></div>
-    <div class="card"><table><thead><tr><th>ID</th><th>Product</th><th>Version</th><th>Exe</th><th>Status</th><th>Actions</th></tr></thead><tbody id="prodList"></tbody></table></div>
+    <div class="card"><table><thead><tr><th>ID</th><th>Product</th><th>Version</th><th>Files</th><th>Status</th><th>Actions</th></tr></thead><tbody id="prodList"></tbody></table></div>
   </div>
 
   <div class="main hidden" id="pg-keys">
@@ -263,12 +263,12 @@
 
 <div class="modal-overlay" id="modal-exe">
   <div class="modal">
-    <h3>Upload EXE</h3>
+    <h3>Upload Product Files</h3>
     <input type="hidden" id="meId">
-    <div class="field"><label>Select EXE file</label><input type="file" id="meFile" accept=".exe" style="padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);width:100%;font-size:13px"></div>
+    <div class="field"><label>Select ZIP file (containing index.html)</label><input type="file" id="meFile" accept=".zip" style="padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);width:100%;font-size:13px"></div>
     <div class="modal-actions">
       <button class="cancel" onclick="closeModal('modal-exe')">Cancel</button>
-      <button class="confirm" onclick="uploadExe()">Upload & Encrypt</button>
+      <button class="confirm" onclick="uploadFiles()">Upload</button>
     </div>
   </div>
 </div>
@@ -438,11 +438,11 @@ async function loadProducts() {
         <td>#${p.id}</td>
         <td><strong style="color:var(--text-primary)">${p.icon || ''} ${p.name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${p.description || ''}</span></td>
         <td class="mono">${p.version || '1.0.0'}</td>
-        <td>${p.exe_name ? `<span style="font-size:11px;color:var(--accent-light)">${p.exe_name}</span>` : '<span style="color:var(--text-muted);font-size:11px">No EXE</span>'}</td>
+        <td>${p.files_name ? `<span style="font-size:11px;color:var(--accent-light)">${p.files_name}</span>` : '<span style="color:var(--text-muted);font-size:11px">No Files</span>'}</td>
         <td><span class="badge ${p.status === 'active' ? 'on' : 'off'}">${p.status}</span></td>
         <td><div class="actions">
           <button onclick="editProduct(${p.id})">Edit</button>
-          <button onclick="showUploadExe(${p.id})">Upload EXE</button>
+          <button onclick="showUploadExe(${p.id})">Upload Files</button>
           <button class="del" onclick="deleteProduct(${p.id})">Delete</button>
         </div></td>
       </tr>`
@@ -501,17 +501,17 @@ function showUploadExe(pid) {
   showModal('modal-exe');
 }
 
-async function uploadExe() {
+async function uploadFiles() {
   const pid = document.getElementById('meId').value;
   const file = document.getElementById('meFile').files[0];
   if (!file) return toast('Select a file', 'err');
   const fd = new FormData();
-  fd.append('exe', file);
+  fd.append('file', file);
   try {
-    await fetch('/api/products/' + pid + '/exe', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+    await fetch('/api/products/' + pid + '/files', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
     closeModal('modal-exe');
     loadProducts();
-    toast('EXE uploaded & encrypted');
+    toast('Files uploaded');
   } catch { toast('Upload failed', 'err'); }
 }
 
