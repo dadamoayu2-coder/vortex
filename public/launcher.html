@@ -403,9 +403,9 @@
           <div class="product-name" id="productName"></div>
           <div class="product-ver" id="productVer"></div>
         </div>
-        <button class="launch-btn" id="launchBtn" onclick="downloadProduct()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download Product
+        <button class="launch-btn" id="launchBtn" onclick="launchProduct()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Launch Product
         </button>
       </div>
 
@@ -581,7 +581,7 @@
       btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Verify License';
     }
 
-    async function downloadProduct() {
+    async function launchProduct() {
       if (!currentDownloadToken || !serverUrl || !currentProduct) return;
 
       const btn = document.getElementById('launchBtn');
@@ -609,28 +609,15 @@
           }
         }
 
-        showProgress(true, 100, 'Saving file...');
-        const buffer = Buffer.concat(chunks.map(c => Buffer.from(c)));
-        const filename = (currentProduct.name || 'product') + '.vortex';
+        showProgress(true, 100, 'Decrypting...');
+        const encryptedBuffer = Buffer.concat(chunks.map(c => Buffer.from(c)));
 
-        if (typeof ipcRenderer !== 'undefined') {
-          const result = await ipcRenderer.invoke('save-file', Array.from(buffer), filename);
-          if (result.success) {
-            showMessage('Saved to: ' + result.path, 'success');
-          } else if (result.error !== 'Cancelled') {
-            showMessage('Save failed: ' + result.error, 'error');
-          }
+        const decrypted = await ipcRenderer.invoke('decrypt-and-run', encryptedBuffer, currentProduct.name);
+
+        if (decrypted.success) {
+          showMessage('Product launched successfully!', 'success');
         } else {
-          const blob = new Blob([buffer], { type: 'application/octet-stream' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          showMessage('Download started!', 'success');
+          showMessage('Launch failed: ' + (decrypted.error || 'Unknown error'), 'error');
         }
       } catch (e) {
         showMessage('Download failed: ' + e.message, 'error');
@@ -638,7 +625,7 @@
 
       showProgress(false);
       btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Product';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg> Launch Product';
     }
 
     function startHeartbeat(productName) {
