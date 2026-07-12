@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const AdmZip = require('adm-zip');
+const { encrypt, decrypt } = require('./crypto');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const PORT = process.env.PORT || 8080;
@@ -77,27 +78,22 @@ app.post('/api/verify', (req, res) => {
   res.json({ success: true, product: { name: product.name, icon: product.icon, version: product.version }, runToken: token });
 });
 
-// Product run - serves the product index.html (token protected)
+// Product run - serves decrypted exe
 app.get('/api/run/:token', (req, res) => {
   const t = db._tokens[req.params.token];
-  if (!t) return res.status(404).send('Invalid or expired token');
+  if (!t) return res.status(404).json({ error: 'Invalid or expired token' });
   const product = db.products.find(p => p.id === t.product_id);
-  if (!product || !product.files_dir || !fs.existsSync(product.files_dir)) return res.status(404).send('Product not found');
-  const indexPath = path.join(product.files_dir, 'index.html');
-  if (!fs.existsSync(indexPath)) return res.status(404).send('Product index.html not found');
-  res.sendFile(indexPath);
-});
-
-// Product static files (token protected)
-app.get('/api/run/:token/*', (req, res) => {
-  const t = db._tokens[req.params.token];
-  if (!t) return res.status(404).send('Invalid or expired token');
-  const product = db.products.find(p => p.id === t.product_id);
-  if (!product || !product.files_dir || !fs.existsSync(product.files_dir)) return res.status(404).send('Product not found');
-  const filePath = path.join(product.files_dir, req.params[0]);
-  if (!filePath.startsWith(product.files_dir)) return res.status(403).send('Forbidden');
-  if (!fs.existsSync(filePath)) return res.status(404).send('File not found');
-  res.sendFile(filePath);
+  if (!product || !product.files_dir) return res.status(404).json({ error: 'Product not found' });
+  const exePath = path.join(product.files_dir, 'product.vortex');
+  if (!fs.existsSync(exePath)) return res.status(404).json({ error: 'File not found' });
+  try {
+    const encrypted = fs.readFileSync(exePath);
+    const decrypted = decrypt(encrypted);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${product.files_name || product.name + '.exe'}"`);
+    res.send(decrypted);
+    log('exe_run', `${product.name} -> ${t.hwid}`, req.ip);
+  } catch { res.status(500).json({ error: 'Decrypt failed' }); }
 });
 
 // ========== AUTH ==========
@@ -147,22 +143,23 @@ app.delete('/api/products/:id', auth, (req, res) => {
   save(); log('product_delete', `#${pid}`, req.ip); res.json({ ok: true });
 });
 
-// Upload product files (zip)
+// Upload product exe (encrypted)
 app.post('/api/products/:id/files', auth, upload.single('file'), (req, res) => {
   const p = db.products.find(x => x.id === +req.params.id);
   if (!p || !req.file) return res.status(404).json({ error: 'Not found' });
   try {
-    if (p.files_dir && fs.existsSync(p.files_dir)) fs.rmSync(p.files_dir, { recursive: true });
-    const extractDir = path.join(DATA_DIR, 'products', String(p.id));
-    fs.mkdirSync(extractDir, { recursive: true });
-    const zip = new AdmZip(req.file.path);
-    zip.extractAllTo(extractDir, true);
+    const rawData = fs.readFileSync(req.file.path);
+    const encrypted = encrypt(rawData);
+    const exeDir = path.join(DATA_DIR, 'products', String(p.id));
+    fs.mkdirSync(exeDir, { recursive: true });
+    const exePath = path.join(exeDir, 'product.vortex');
+    fs.writeFileSync(exePath, encrypted);
     try { fs.unlinkSync(req.file.path); } catch {}
-    p.files_dir = extractDir;
+    p.files_dir = exeDir;
     p.files_name = req.file.originalname;
     p.files_size = req.file.size;
-    save(); log('files_upload', `${p.name}: ${req.file.originalname}`, req.ip); res.json({ ok: true });
-  } catch (err) { res.status(400).json({ error: 'Invalid zip file: ' + err.message }); }
+    save(); log('exe_upload', `${p.name}: ${req.file.originalname}`, req.ip); res.json({ ok: true });
+  } catch (err) { res.status(400).json({ error: 'Upload failed: ' + err.message }); }
 });
 
 // ========== KEYS ==========
