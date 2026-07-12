@@ -1,11 +1,10 @@
 {
   "name": "vortex",
   "version": "2.0.0",
-  "description": "VORTEX License Management System",
+  "description": "VORTEX Admin Panel",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/index.js",
-    "start:verify": "node server/verify.js"
+    "start": "node server/index.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
