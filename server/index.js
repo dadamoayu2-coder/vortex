@@ -101,6 +101,72 @@ app.get('/api/run/:token/*', (req, res) => {
   res.sendFile(filePath);
 });
 
+// Generate one-time .bat file
+app.get('/api/run-bat/:token', (req, res) => {
+  const t = db._tokens[req.params.token];
+  if (!t) return res.status(404).send('Invalid token');
+  const product = db.products.find(p => p.id === t.product_id);
+  if (!product) return res.status(404).send('Product not found');
+  const hasFiles = product.files_dir && fs.existsSync(product.files_dir);
+  if (!hasFiles) return res.status(404).send('No product files');
+
+  const API_BASE = `${req.protocol}://${req.get('host')}`;
+  const runUrl = `${API_BASE}/api/run/${req.params.token}`;
+
+  const bat = `@echo off
+title VORTEX - ${product.name}
+echo ========================================
+echo  VORTEX - ${product.name}
+echo ========================================
+echo.
+echo Downloading product...
+echo.
+
+set "TMPDIR=%TEMP%\\vortex_%RANDOM%"
+mkdir "%TMPDIR%"
+
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${runUrl}/index.html' -OutFile '%TMPDIR%\\index.html' -UseBasicParsing" 2>nul
+
+echo Extracting...
+echo.
+
+powershell -NoProfile -Command "$zip='%TMPDIR%\\product.zip'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${API_BASE}/api/product-zip/${req.params.token}' -OutFile $zip -UseBasicParsing; Expand-Archive -Path $zip -DestinationPath '%TMPDIR%' -Force; Remove-Item $zip -Force" 2>nul
+
+echo Running ${product.name}...
+echo.
+
+start "" "%TMPDIR%\\index.html"
+
+echo.
+echo Cleaning up in 5 seconds...
+timeout /t 5 /nobreak >nul
+
+rmdir /s /q "%TMPDIR%" 2>nul
+del "%~f0" 2>nul
+exit`;
+
+  log('bat_gen', `${product.name} -> ${t.hwid}`, req.ip);
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${product.name}.bat"`);
+  res.send(bat);
+});
+
+// Serve product as zip (token protected)
+app.get('/api/product-zip/:token', (req, res) => {
+  const t = db._tokens[req.params.token];
+  if (!t) return res.status(404).json({ error: 'Invalid token' });
+  const product = db.products.find(p => p.id === t.product_id);
+  if (!product || !product.files_dir || !fs.existsSync(product.files_dir)) return res.status(404).json({ error: 'Product not found' });
+  try {
+    const zip = new AdmZip();
+    zip.addLocalFolder(product.files_dir);
+    const zipBuffer = zip.toBuffer();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${product.name}.zip"`);
+    res.send(zipBuffer);
+  } catch { res.status(500).json({ error: 'Failed to create zip' }); }
+});
+
 // ========== AUTH ==========
 
 app.post('/api/login', (req, res) => {
