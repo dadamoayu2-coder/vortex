@@ -7,8 +7,10 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const AdmZip = require('adm-zip');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(__dirname, '..', 'data'));
 const PORT = process.env.PORT || 8080;
+
+console.log('DATA_DIR:', DATA_DIR);
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(path.join(DATA_DIR, 'uploads'), { recursive: true });
@@ -20,7 +22,12 @@ let db = { admins: [], products: [], keys: [], clients: [], logs: [], settings: 
 function load() {
   if (fs.existsSync(DB_PATH)) try { db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); } catch {}
 }
-function save() { fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)); }
+function save() {
+  const tmp = DB_PATH + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
+  fs.copyFileSync(tmp, DB_PATH);
+  try { fs.unlinkSync(tmp); } catch {}
+}
 function id(arr) { return arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1; }
 function log(action, detail, ip) {
   db.logs.unshift({ id: id(db.logs), action, detail: detail || '', ip: ip || '', at: new Date().toISOString() });
@@ -39,6 +46,8 @@ if (!db.clients) db.clients = [];
 if (!db.logs) db.logs = [];
 if (!db.settings) db.settings = {};
 if (!db._tokens) db._tokens = {};
+
+console.log(`DB loaded: ${db.products.length} products, ${db.keys.length} keys, ${db.clients.length} clients`);
 
 const app = express();
 const upload = multer({ dest: path.join(DATA_DIR, 'uploads'), limits: { fileSize: 500 * 1024 * 1024 } });
