@@ -7,10 +7,9 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 
 const { app } = createServer(DATA_DIR);
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'license.html')));
 app.get('/panel', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'panel.html')));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {
