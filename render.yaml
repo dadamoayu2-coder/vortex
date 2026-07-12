@@ -20,13 +20,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: JWT_SECRET
-        generateValue: true
-      - key: VORTEX_SECRET
-        generateValue: true
-      - key: DATA_DIR
-        value: /data
-    disk:
-      name: vortex-data
-      mountPath: /data
-      sizeGB: 1
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_REPO
+        value: dadamoayu2-coder/vortex
