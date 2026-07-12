@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const { encrypt } = require('./crypto');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
@@ -47,6 +48,45 @@ function auth(req, res, next) {
   if (!h || !h.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
   try { req.admin = jwt.verify(h.slice(7), JWT_SECRET); next(); } catch { res.status(401).json({ error: 'Invalid token' }); }
 }
+
+// ========== LICENSE VERIFY ==========
+
+app.post('/api/verify', (req, res) => {
+  const { key, hwid } = req.body;
+  if (!key || !hwid) return res.status(400).json({ error: 'Key and HWID required' });
+  const k = db.keys.find(x => x.value === key.trim());
+  if (!k) { log('verify_fail', key, req.ip); return res.status(404).json({ error: 'Invalid key' }); }
+  const product = db.products.find(p => p.id === k.product_id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  if (product.status !== 'active') return res.status(403).json({ error: 'Product disabled' });
+  if (k.expires_at && new Date(k.expires_at) < new Date()) return res.status(403).json({ error: 'Key expired' });
+  if (k.used && k.hwid !== hwid) { log('verify_locked', `${key} locked to ${k.hwid}`, req.ip); return res.status(403).json({ error: 'Key locked to another device' }); }
+  if (!k.used) { k.used = true; k.hwid = hwid; save(); log('key_activate', `${key} -> ${product.name} (${hwid})`, req.ip); }
+  const hasExe = product.exe && fs.existsSync(product.exe);
+  const token = hasExe ? crypto.randomBytes(32).toString('hex') : null;
+  if (token) { db._tokens = db._tokens || {}; db._tokens[token] = { product_id: product.id, hwid, used: false, ts: Date.now() }; }
+  log('verify_ok', `${key} on ${product.name}`, req.ip);
+  const existing = db.clients.find(c => c.hwid === hwid);
+  const info = { hwid, product: product.name, last_seen: new Date().toISOString() };
+  if (existing) { Object.assign(existing, info); existing.visits = (existing.visits || 1) + 1; }
+  else db.clients.push({ id: id(db.clients), ...info, first_seen: new Date().toISOString(), visits: 1 });
+  save();
+  res.json({ success: true, product: { name: product.name, icon: product.icon, version: product.version }, downloadToken: token });
+});
+
+app.get('/api/product-dl/:token', (req, res) => {
+  const t = (db._tokens || {})[req.params.token];
+  if (!t || t.used) return res.status(404).json({ error: 'Invalid token' });
+  const product = db.products.find(p => p.id === t.product_id);
+  if (!product || !product.exe || !fs.existsSync(product.exe)) return res.status(404).json({ error: 'File not found' });
+  t.used = true; save();
+  const raw = fs.readFileSync(product.exe);
+  const encrypted = encrypt(raw);
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${product.name}.vortex"`);
+  res.send(encrypted);
+  log('product_dl', `${product.name} -> ${t.hwid}`, req.ip);
+});
 
 // ========== AUTH ==========
 
