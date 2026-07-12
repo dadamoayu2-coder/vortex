@@ -8,7 +8,6 @@ const multer = require('multer');
 const AdmZip = require('adm-zip');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 const PORT = process.env.PORT || 8080;
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -30,6 +29,8 @@ function log(action, detail, ip) {
 }
 
 load();
+if (!db.jwt_secret) { db.jwt_secret = crypto.randomBytes(32).toString('hex'); save(); }
+const JWT_SECRET = process.env.JWT_SECRET || db.jwt_secret;
 if (!db.admins.length) {
   db.admins.push({ id: 1, username: 'admin', password: bcrypt.hashSync('admin', 10), created: new Date().toISOString() });
   save();
