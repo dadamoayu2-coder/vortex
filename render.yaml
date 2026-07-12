@@ -4,6 +4,18 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install --production
+    startCommand: node server/verify.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_URL
+        sync: false
+
+  - type: web
+    name: vortex-panel
+    runtime: node
+    plan: free
+    buildCommand: npm install --production
     startCommand: node server/index.js
     envVars:
       - key: NODE_ENV

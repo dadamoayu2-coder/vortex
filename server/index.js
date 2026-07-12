@@ -248,8 +248,7 @@ app.post('/api/password', auth, (req, res) => {
 
 // ========== STATIC ==========
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'verify.html')));
-app.get('/panel', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'admin.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'admin.html')));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Cleanup tokens
@@ -259,4 +258,4 @@ setInterval(() => {
   for (const [k, v] of Object.entries(db._tokens)) { if (now - v.ts > 600000) delete db._tokens[k]; }
 }, 60000);
 
-app.listen(PORT, '0.0.0.0', () => console.log(`VORTEX on :${PORT} | /panel = admin | / = verify`));
+app.listen(PORT, '0.0.0.0', () => console.log(`VORTEX Panel on :${PORT}`));

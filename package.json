@@ -4,7 +4,8 @@
   "description": "VORTEX License Management System",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "start:verify": "node server/verify.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
