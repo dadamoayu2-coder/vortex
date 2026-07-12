@@ -243,6 +243,16 @@ function createServer(DATA_DIR) {
     res.json({ version: APP_VERSION, productVersion: data.settings.product_version || '1.0.0' });
   });
 
+  app.get('/api/download-url', (req, res) => {
+    const repo = data.settings.github_repo || 'dadamoayu2-coder/vortex';
+    const tag = data.settings.launcher_version || 'v1.0.0';
+    res.json({
+      repo,
+      tag,
+      url: `https://github.com/${repo}/releases/download/${tag}/VORTEX.exe`
+    });
+  });
+
   app.post('/api/verify', (req, res) => {
     const { key, hwid, clientInfo } = req.body;
     if (!key) return res.status(400).json({ error: 'Key required' });

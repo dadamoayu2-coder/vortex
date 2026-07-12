@@ -219,21 +219,41 @@
 
       <div class="license-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <h3 style="margin:0">Enter License Key</h3>
+          <h3 style="margin:0">Download Launcher</h3>
           <span id="connStatus"><span class="status-dot disconnected"></span><span style="font-size:11px;color:var(--text-muted)">Disconnected</span></span>
         </div>
 
-        <input type="text" id="keyInput" class="key-input" placeholder="VX-XXXX-XXXX-XXXX-XXXX" maxlength="30" autocomplete="off" spellcheck="false">
-        <button class="verify-btn" id="verifyBtn" onclick="verifyKey()">Verify</button>
-
-        <div id="message" class="message"></div>
-
-        <div id="downloadSection" class="download-section">
-          <div class="product-info" id="productInfo"></div>
+        <div id="downloadSection" class="download-section show">
+          <div style="text-align:center;padding:20px 0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="1.5" width="48" height="48" style="margin-bottom:12px">
+              <defs>
+                <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#9d5cfa"/>
+                  <stop offset="100%" style="stop-color:#4a00e0"/>
+                </linearGradient>
+              </defs>
+              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="url(#grad3)"/>
+              <path d="M2 17l10 5 10-5" stroke="url(#grad3)"/>
+              <path d="M2 12l10 5 10-5" stroke="url(#grad3)"/>
+            </svg>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:1px;color:var(--accent-light);margin-bottom:4px">VORTEX Launcher</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px">License verification and product download</div>
+          </div>
           <button class="download-btn" id="downloadBtn" onclick="downloadLauncher()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download Launcher
+            Download VORTEX.exe
           </button>
+        </div>
+
+        <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h3 style="margin:0;font-family:var(--font-display);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary)">Key Verification</h3>
+          </div>
+
+          <input type="text" id="keyInput" class="key-input" placeholder="VX-XXXX-XXXX-XXXX-XXXX" maxlength="30" autocomplete="off" spellcheck="false">
+          <button class="verify-btn" id="verifyBtn" onclick="verifyKey()">Verify</button>
+
+          <div id="message" class="message"></div>
         </div>
 
         <div class="settings-toggle">
@@ -333,7 +353,6 @@
       btn.disabled = true;
       btn.innerHTML = '<div class="spinner"></div> Verifying...';
       document.getElementById('message').className = 'message';
-      document.getElementById('downloadSection').classList.remove('show');
 
       try {
         const res = await fetch(serverUrl + '/api/verify', {
@@ -344,11 +363,8 @@
         const data = await res.json();
 
         if (data.success) {
-          showMessage('Key verified successfully!', 'success');
+          showMessage('Key verified! Open VORTEX Launcher to download ' + (data.product?.name || 'product'), 'success');
           currentLaunchToken = data.launchToken;
-          document.getElementById('productInfo').innerHTML =
-            `<div class="product-icon">${data.product.icon || '📦'}</div><div class="product-name">${data.product.name}</div>`;
-          document.getElementById('downloadSection').classList.add('show');
           setConnStatus(true);
         } else {
           showMessage(data.error || 'Verification failed', 'error');
@@ -363,12 +379,16 @@
     }
 
     async function downloadLauncher() {
-      if (!currentLaunchToken || !serverUrl) return;
+      if (!serverUrl) {
+        showMessage('Please configure server address first', 'error');
+        document.getElementById('serverConfig').classList.add('show');
+        return;
+      }
       try {
-        const res = await fetch(serverUrl + '/api/launch/' + currentLaunchToken);
+        const res = await fetch(serverUrl + '/api/download-url');
         const data = await res.json();
-        if (data.downloadToken) {
-          window.location.href = serverUrl + '/api/dl/' + data.downloadToken;
+        if (data.url) {
+          window.location.href = data.url;
         }
       } catch (e) {
         showMessage('Download failed', 'error');
