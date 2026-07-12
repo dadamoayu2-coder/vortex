@@ -1,35 +1,23 @@
 const crypto = require('crypto');
+const ALGO = 'aes-256-gcm';
+const KEY_LEN = 32, IV_LEN = 16, TAG_LEN = 16;
 
-const ALGORITHM = 'aes-256-gcm';
-const KEY_LENGTH = 32;
-const IV_LENGTH = 16;
-const TAG_LENGTH = 16;
-
-function deriveKey(secret) {
-  return crypto.scryptSync(secret, 'vortex-salt-v1', KEY_LENGTH);
+function key(secret) {
+  return crypto.scryptSync(secret || process.env.VORTEX_SECRET || 'vortex-secret', 'vortex-salt', KEY_LEN);
 }
 
-function encrypt(buffer, secret) {
-  const key = deriveKey(secret);
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv, { authTagLength: TAG_LENGTH });
-  const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return Buffer.concat([iv, tag, encrypted]);
+function encrypt(buf, secret) {
+  const iv = crypto.randomBytes(IV_LEN);
+  const c = crypto.createCipheriv(ALGO, key(secret), iv, { authTagLength: TAG_LEN });
+  return Buffer.concat([iv, c.getAuthTag(), c.update(buf), c.final()]);
 }
 
-function decrypt(buffer, secret) {
-  const key = deriveKey(secret);
-  const iv = buffer.subarray(0, IV_LENGTH);
-  const tag = buffer.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
-  const encrypted = buffer.subarray(IV_LENGTH + TAG_LENGTH);
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv, { authTagLength: TAG_LENGTH });
-  decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+function decrypt(buf, secret) {
+  const iv = buf.subarray(0, IV_LEN);
+  const tag = buf.subarray(IV_LEN, IV_LEN + TAG_LEN);
+  const d = crypto.createDecipheriv(ALGO, key(secret), iv, { authTagLength: TAG_LEN });
+  d.setAuthTag(tag);
+  return Buffer.concat([d.update(buf.subarray(IV_LEN + TAG_LEN)), d.final()]);
 }
 
-function getSecret() {
-  return process.env.VORTEX_SECRET || 'vortex-default-secret-change-me';
-}
-
-module.exports = { encrypt, decrypt, getSecret };
+module.exports = { encrypt, decrypt };

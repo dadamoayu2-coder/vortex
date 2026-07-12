@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORTEX Panel</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg-primary);font-family:var(--font-body);color:var(--text-primary);min-height:100vh}
+
+  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .login-card{width:100%;max-width:420px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:20px;padding:40px 36px;position:relative;overflow:hidden}
+  .login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient)}
+  .login-logo{text-align:center;margin-bottom:30px}
+  .login-logo svg{width:48px;height:48px;margin-bottom:10px}
+  .login-logo h1{font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:4px;background:var(--gradient-light);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .login-logo p{color:var(--text-muted);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+  .field input{width:100%;padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:14px;outline:none;transition:all .3s}
+  .field input:focus{border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
+  .btn{width:100%;padding:14px;background:var(--accent);color:white;border:none;border-radius:12px;font-family:var(--font-body);font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .3s;box-shadow:0 4px 20px var(--accent-glow)}
+  .btn:hover{background:var(--accent-light);transform:translateY(-1px)}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .err-msg{display:none;margin-top:12px;padding:12px 16px;background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.2);border-radius:10px;color:var(--danger);font-size:13px;font-weight:600;text-align:center}
+  .err-msg.show{display:block}
+
+  .panel{display:none;min-height:100vh}
+  .panel.active{display:flex}
+
+  .sidebar{width:240px;min-height:100vh;background:var(--bg-secondary);border-right:1px solid var(--border);padding:20px 0;position:fixed;top:0;left:0;bottom:0;z-index:10;display:flex;flex-direction:column}
+  .sb-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid var(--border)}
+  .sb-logo svg{width:28px;height:28px}
+  .sb-logo h2{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:3px;background:var(--gradient-light);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .sb-nav{flex:1;padding:16px 0}
+  .sb-nav a{display:flex;align-items:center;gap:12px;padding:11px 20px;color:var(--text-secondary);font-size:13px;font-weight:600;letter-spacing:.5px;text-decoration:none;transition:all .2s;border-left:3px solid transparent;cursor:pointer}
+  .sb-nav a:hover{color:var(--text-primary);background:rgba(255,255,255,.03)}
+  .sb-nav a.active{color:var(--accent-light);background:rgba(157,92,250,.08);border-left-color:var(--accent)}
+  .sb-nav a svg{width:18px;height:18px;flex-shrink:0}
+  .sb-foot{padding:16px 20px;border-top:1px solid var(--border)}
+  .sb-foot a{display:flex;align-items:center;gap:10px;padding:8px 0;color:var(--text-muted);font-size:12px;cursor:pointer;text-decoration:none;transition:color .2s}
+  .sb-foot a:hover{color:var(--danger)}
+
+  .main{margin-left:240px;flex:1;padding:32px;min-height:100vh}
+  .main.hidden{display:none}
+  .page-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+  .page-title h2{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:1px}
+  .page-title p{color:var(--text-muted);font-size:13px;margin-top:2px}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+  .stat{background:var(--bg-secondary);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
+  .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gradient)}
+  .stat .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+  .stat .val{font-family:var(--font-display);font-size:28px;font-weight:700;margin-top:4px;background:var(--gradient-light);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+  .card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;position:relative;overflow:hidden}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gradient)}
+  .card h3{font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:1px;margin-bottom:14px;color:var(--accent-light)}
+
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;padding:10px 14px;border-bottom:1px solid var(--border)}
+  td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.03);font-size:13px;color:var(--text-secondary);vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  tr[style*="cursor:pointer"]:hover td{background:rgba(157,92,250,.06)}
+
+  .badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.5px}
+  .badge.on{background:rgba(0,255,136,.12);color:var(--success);border:1px solid rgba(0,255,136,.2)}
+  .badge.off{background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid var(--border)}
+  .badge.err{background:rgba(255,51,85,.1);color:var(--danger);border:1px solid rgba(255,51,85,.2)}
+
+  .mono{font-family:var(--font-mono);font-size:12px;letter-spacing:1px}
+
+  .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .actions button{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+  .actions button:hover{border-color:var(--accent);color:var(--text-primary)}
+  .actions button.del:hover{border-color:var(--danger);color:var(--danger)}
+
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .toolbar input,.toolbar select{padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:13px;outline:none;transition:all .3s}
+  .toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
+  .toolbar select{cursor:pointer}
+
+  .btn-sm{padding:10px 18px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .3s;white-space:nowrap}
+  .btn-sm:hover{background:var(--accent-light)}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:480px;position:relative;overflow:hidden}
+  .modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient)}
+  .modal h3{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:20px}
+  .modal .field{margin-bottom:14px}
+  .modal-actions{display:flex;gap:10px;margin-top:20px}
+  .modal-actions button{flex:1;padding:12px;border-radius:10px;border:none;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:1px;text-transform:uppercase}
+  .modal-actions .cancel{background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border)}
+  .modal-actions .confirm{background:var(--accent);color:white;box-shadow:0 4px 15px var(--accent-glow)}
+  .modal-actions .confirm:hover{background:var(--accent-light)}
+
+  .toast{position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;animation:slideIn .3s;max-width:360px}
+  .toast.ok{background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);color:var(--success)}
+  .toast.err{background:rgba(255,51,85,.15);border:1px solid rgba(255,51,85,.3);color:var(--danger)}
+  @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+  .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media(max-width:768px){
+    .sidebar{display:none}
+    .main{margin-left:0;padding:16px}
+    .stats{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 100 100" fill="none"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#9d5cfa"/><stop offset="100%" style="stop-color:#4a00e0"/></linearGradient></defs><polygon points="50,8 92,30 92,70 50,92 8,70 8,30" fill="none" stroke="url(#lg)" stroke-width="3"/><path d="M35 50 L50 30 L65 50 L50 70 Z" fill="url(#lg)" opacity=".8"/></svg>
+      <h1>VORTEX</h1>
+      <p>Admin Panel</p>
+    </div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+    </div>
+    <button class="btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="err-msg" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div class="panel" id="panelPage">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <svg viewBox="0 0 100 100" fill="none"><defs><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#9d5cfa"/><stop offset="100%" style="stop-color:#4a00e0"/></linearGradient></defs><polygon points="50,8 92,30 92,70 50,92 8,70 8,30" fill="none" stroke="url(#lg2)" stroke-width="3"/><path d="M35 50 L50 30 L65 50 L50 70 Z" fill="url(#lg2)" opacity=".8"/></svg>
+      <h2>VORTEX</h2>
+    </div>
+    <nav class="sb-nav">
+      <a class="active" onclick="showPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a onclick="showPage('products')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z"/></svg>
+        Products
+      </a>
+      <a onclick="showPage('keys')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        Keys
+      </a>
+      <a onclick="showPage('clients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Clients
+      </a>
+      <a onclick="showPage('logs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Logs
+      </a>
+      <a onclick="showPage('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="sb-foot">
+      <a onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </a>
+    </div>
+  </div>
+
+  <div class="main" id="pg-dashboard">
+    <div class="page-title"><div><h2>Dashboard</h2><p>System overview</p></div></div>
+    <div class="stats">
+      <div class="stat"><div class="lbl">Products</div><div class="val" id="s-products">0</div></div>
+      <div class="stat"><div class="lbl">Total Keys</div><div class="val" id="s-keys">0</div></div>
+      <div class="stat"><div class="lbl">Used Keys</div><div class="val" id="s-used">0</div></div>
+      <div class="stat"><div class="lbl">Clients</div><div class="val" id="s-clients">0</div></div>
+      <div class="stat"><div class="lbl">Online</div><div class="val" id="s-online">0</div></div>
+    </div>
+    <div class="card">
+      <h3>Recent Activity</h3>
+      <table><thead><tr><th>Action</th><th>Detail</th><th>Time</th></tr></thead><tbody id="dashLogs"></tbody></table>
+    </div>
+  </div>
+
+  <div class="main hidden" id="pg-products">
+    <div class="page-title"><div><h2>Products</h2><p>Manage your products</p></div><button class="btn-sm" onclick="showAddProduct()">+ New Product</button></div>
+    <div class="card"><table><thead><tr><th>ID</th><th>Product</th><th>Version</th><th>Exe</th><th>Status</th><th>Actions</th></tr></thead><tbody id="prodList"></tbody></table></div>
+  </div>
+
+  <div class="main hidden" id="pg-keys">
+    <div class="page-title"><div><h2>License Keys</h2><p>Manage keys</p></div><button class="btn-sm" onclick="showGenKeys()">+ Generate Keys</button></div>
+    <div class="toolbar">
+      <input type="text" id="keySearch" placeholder="Search keys..." oninput="loadKeys()">
+      <select id="keyFilter" onchange="loadKeys()"><option value="">All Products</option></select>
+    </div>
+    <div class="card"><table><thead><tr><th>Key</th><th>Product</th><th>Status</th><th>HWID</th><th>Expires</th><th>Actions</th></tr></thead><tbody id="keyList"></tbody></table></div>
+    <div class="toolbar" style="justify-content:center;margin-top:8px">
+      <button class="btn-sm" id="keysPrev" onclick="keysPage(keysPageN-1)" style="display:none">Prev</button>
+      <span style="color:var(--text-muted);font-size:12px" id="keysPageInfo"></span>
+      <button class="btn-sm" id="keysNext" onclick="keysPage(keysPageN+1)" style="display:none">Next</button>
+    </div>
+  </div>
+
+  <div class="main hidden" id="pg-clients">
+    <div class="page-title"><div><h2>Clients</h2><p>Connected devices</p></div></div>
+    <div class="card"><table><thead><tr><th>HWID</th><th>Product</th><th>Visits</th><th>Last Seen</th><th>Actions</th></tr></thead><tbody id="clientList"></tbody></table></div>
+  </div>
+
+  <div class="main hidden" id="pg-logs">
+    <div class="page-title"><div><h2>Logs</h2><p>System activity</p></div></div>
+    <div class="card"><table><thead><tr><th>Time</th><th>Action</th><th>Detail</th><th>IP</th></tr></thead><tbody id="logList"></tbody></table></div>
+    <div class="toolbar" style="justify-content:center;margin-top:8px">
+      <button class="btn-sm" id="logsPrev" onclick="loadLogs(logsPageN-1)" style="display:none">Prev</button>
+      <span style="color:var(--text-muted);font-size:12px" id="logsPageInfo"></span>
+      <button class="btn-sm" id="logsNext" onclick="loadLogs(logsPageN+1)" style="display:none">Next</button>
+    </div>
+  </div>
+
+  <div class="main hidden" id="pg-settings">
+    <div class="page-title"><div><h2>Settings</h2><p>Configuration</p></div></div>
+    <div class="card">
+      <h3>Launcher Version Tag</h3>
+      <div class="field"><label>GitHub Release Tag</label><input type="text" id="setLauncherVer" placeholder="v1.0.0"></div>
+      <div class="field"><label>GitHub Repo</label><input type="text" id="setGitHubRepo" placeholder="dadamoayu2-coder/vortex"></div>
+      <button class="btn-sm" onclick="saveSettings()">Save</button>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>Change Password</h3>
+      <div class="field"><label>Current Password</label><input type="password" id="pwCurrent"></div>
+      <div class="field"><label>New Password</label><input type="password" id="pwNew"></div>
+      <button class="btn-sm" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal">
+    <h3 id="modalProductTitle">New Product</h3>
+    <input type="hidden" id="mpId">
+    <div class="field"><label>Name</label><input type="text" id="mpName" placeholder="Product Name"></div>
+    <div class="field"><label>Version</label><input type="text" id="mpVer" placeholder="1.0.0" value="1.0.0"></div>
+    <div class="field"><label>Icon (emoji)</label><input type="text" id="mpIcon" placeholder="🎮" maxlength="4"></div>
+    <div class="field"><label>Description</label><input type="text" id="mpDesc" placeholder="Description"></div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal('modal-product')">Cancel</button>
+      <button class="confirm" onclick="saveProduct()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-exe">
+  <div class="modal">
+    <h3>Upload EXE</h3>
+    <input type="hidden" id="meId">
+    <div class="field"><label>Select EXE file</label><input type="file" id="meFile" accept=".exe" style="padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);width:100%;font-size:13px"></div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal('modal-exe')">Cancel</button>
+      <button class="confirm" onclick="uploadExe()">Upload & Encrypt</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-genkeys">
+  <div class="modal">
+    <h3>Generate Keys</h3>
+    <div class="field"><label>Product</label><select id="mkProduct" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:14px"></select></div>
+    <div class="field"><label>Count</label><input type="number" id="mkCount" value="1" min="1" max="100"></div>
+    <div class="field"><label>Prefix</label><input type="text" id="mkPrefix" value="VX" placeholder="VX"></div>
+    <div class="field"><label>Expires (optional)</label><input type="date" id="mkExpiry"></div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal('modal-genkeys')">Cancel</button>
+      <button class="confirm" onclick="genKeys()">Generate</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-keyedit">
+  <div class="modal">
+    <h3>Edit Key</h3>
+    <input type="hidden" id="ekId">
+    <div class="field"><label>Key Value</label><input type="text" id="ekValue" readonly style="opacity:.7;cursor:not-allowed"></div>
+    <div class="field"><label>Product</label><select id="ekProduct" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:14px"></select></div>
+    <div class="field"><label>Expiration Date</label><input type="date" id="ekExpiry"></div>
+    <div class="field"><label>HWID</label><input type="text" id="ekHwid" placeholder="Auto-assigned on first use" style="font-family:var(--font-mono);font-size:12px"></div>
+    <div id="ekStatusRow" class="field"><label>Status</label><div id="ekStatusBadge" style="margin-top:4px"></div></div>
+    <div class="field"><label>Created</label><div id="ekCreated" style="color:var(--text-muted);font-size:13px;margin-top:4px">-</div></div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal('modal-keyedit')">Cancel</button>
+      <button style="padding:12px;border-radius:10px;border:none;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;background:rgba(255,51,85,.15);color:var(--danger);border:1px solid rgba(255,51,85,.3)" onclick="resetEditKey()">Reset HWID</button>
+      <button class="confirm" onclick="saveEditKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let token = localStorage.getItem('vx_token');
+let products = [];
+let keysPageN = 1, logsPageN = 1;
+
+async function api(path, opts = {}) {
+  const h = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  const r = await fetch(path, { ...opts, headers: h });
+  if (r.status === 401) { logout(); throw new Error('Unauthorized'); }
+  return r;
+}
+
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function fmtDate(d) {
+  if (!d) return '-';
+  const dt = new Date(d);
+  return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// AUTH
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Signing in...'; errEl.className = 'err-msg';
+
+  try {
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) });
+    const d = await r.json();
+    if (d.token) {
+      token = d.token;
+      localStorage.setItem('vx_token', token);
+      showPanel();
+    } else {
+      errEl.textContent = d.error || 'Login failed';
+      errEl.className = 'err-msg show';
+    }
+  } catch { errEl.textContent = 'Connection error'; errEl.className = 'err-msg show'; }
+  btn.disabled = false; btn.textContent = 'Sign In';
+}
+
+function logout() {
+  token = null;
+  localStorage.removeItem('vx_token');
+  document.getElementById('loginPage').style.display = '';
+  document.getElementById('panelPage').className = 'panel';
+}
+
+async function showPanel() {
+  try {
+    const r = await api('/api/me');
+    if (!r.ok) throw new Error();
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('panelPage').className = 'panel active';
+    loadDashboard();
+    loadProducts();
+  } catch { logout(); }
+}
+
+// NAV
+function showPage(name) {
+  document.querySelectorAll('.main').forEach(e => e.classList.add('hidden'));
+  document.getElementById('pg-' + name).classList.remove('hidden');
+  document.querySelectorAll('.sb-nav a').forEach(a => a.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  else if (name === 'products') loadProducts();
+  else if (name === 'keys') loadKeys();
+  else if (name === 'clients') loadClients();
+  else if (name === 'logs') loadLogs();
+  else if (name === 'settings') loadSettings();
+}
+
+// DASHBOARD
+async function loadDashboard() {
+  try {
+    const r = await api('/api/dashboard');
+    const d = await r.json();
+    document.getElementById('s-products').textContent = d.products;
+    document.getElementById('s-keys').textContent = d.keys;
+    document.getElementById('s-used').textContent = d.usedKeys;
+    document.getElementById('s-clients').textContent = d.clients;
+    document.getElementById('s-online').textContent = d.online;
+    document.getElementById('dashLogs').innerHTML = (d.logs || []).map(l =>
+      `<tr><td><span class="badge ${l.action.includes('fail') || l.action.includes('delete') ? 'err' : 'on'}">${l.action}</span></td><td>${l.detail || ''}</td><td style="font-size:12px;color:var(--text-muted)">${fmtDate(l.at)}</td></tr>`
+    ).join('');
+  } catch {}
+}
+
+// PRODUCTS
+async function loadProducts() {
+  try {
+    const r = await api('/api/products');
+    products = await r.json();
+    document.getElementById('prodList').innerHTML = products.map(p =>
+      `<tr>
+        <td>#${p.id}</td>
+        <td><strong style="color:var(--text-primary)">${p.icon || ''} ${p.name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${p.description || ''}</span></td>
+        <td class="mono">${p.version || '1.0.0'}</td>
+        <td>${p.exe_name ? `<span style="font-size:11px;color:var(--accent-light)">${p.exe_name}</span>` : '<span style="color:var(--text-muted);font-size:11px">No EXE</span>'}</td>
+        <td><span class="badge ${p.status === 'active' ? 'on' : 'off'}">${p.status}</span></td>
+        <td><div class="actions">
+          <button onclick="editProduct(${p.id})">Edit</button>
+          <button onclick="showUploadExe(${p.id})">Upload EXE</button>
+          <button class="del" onclick="deleteProduct(${p.id})">Delete</button>
+        </div></td>
+      </tr>`
+    ).join('');
+  } catch {}
+}
+
+function showAddProduct() {
+  document.getElementById('modalProductTitle').textContent = 'New Product';
+  document.getElementById('mpId').value = '';
+  document.getElementById('mpName').value = '';
+  document.getElementById('mpVer').value = '1.0.0';
+  document.getElementById('mpIcon').value = '';
+  document.getElementById('mpDesc').value = '';
+  showModal('modal-product');
+}
+
+function editProduct(pid) {
+  const p = products.find(x => x.id === pid);
+  if (!p) return;
+  document.getElementById('modalProductTitle').textContent = 'Edit Product';
+  document.getElementById('mpId').value = p.id;
+  document.getElementById('mpName').value = p.name;
+  document.getElementById('mpVer').value = p.version || '1.0.0';
+  document.getElementById('mpIcon').value = p.icon || '';
+  document.getElementById('mpDesc').value = p.description || '';
+  showModal('modal-product');
+}
+
+async function saveProduct() {
+  const id = document.getElementById('mpId').value;
+  const body = {
+    name: document.getElementById('mpName').value.trim(),
+    version: document.getElementById('mpVer').value.trim() || '1.0.0',
+    icon: document.getElementById('mpIcon').value.trim(),
+    description: document.getElementById('mpDesc').value.trim()
+  };
+  if (!body.name) return toast('Name required', 'err');
+  try {
+    if (id) await api('/api/products/' + id, { method: 'PUT', body: JSON.stringify(body) });
+    else await api('/api/products', { method: 'POST', body: JSON.stringify(body) });
+    closeModal('modal-product');
+    loadProducts();
+    toast(id ? 'Product updated' : 'Product created');
+  } catch { toast('Failed', 'err'); }
+}
+
+async function deleteProduct(pid) {
+  if (!confirm('Delete this product and its keys?')) return;
+  try { await api('/api/products/' + pid, { method: 'DELETE' }); loadProducts(); toast('Deleted'); } catch { toast('Failed', 'err'); }
+}
+
+function showUploadExe(pid) {
+  document.getElementById('meId').value = pid;
+  document.getElementById('meFile').value = '';
+  showModal('modal-exe');
+}
+
+async function uploadExe() {
+  const pid = document.getElementById('meId').value;
+  const file = document.getElementById('meFile').files[0];
+  if (!file) return toast('Select a file', 'err');
+  const fd = new FormData();
+  fd.append('exe', file);
+  try {
+    await fetch('/api/products/' + pid + '/exe', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+    closeModal('modal-exe');
+    loadProducts();
+    toast('EXE uploaded & encrypted');
+  } catch { toast('Upload failed', 'err'); }
+}
+
+// KEYS
+async function loadKeys(page) {
+  keysPageN = page || 1;
+  const search = document.getElementById('keySearch').value;
+  const pid = document.getElementById('keyFilter').value;
+  let qs = `?page=${keysPageN}&limit=50`;
+  if (search) qs += '&search=' + encodeURIComponent(search);
+  if (pid) qs += '&product_id=' + pid;
+  try {
+    const r = await api('/api/keys' + qs);
+    const d = await r.json();
+    document.getElementById('keyList').innerHTML = d.keys.map(k => {
+      const p = products.find(x => x.id === k.product_id);
+      return `<tr style="cursor:pointer" onclick="editKey(${k.id})" title="Click to edit">
+        <td class="mono" style="color:var(--accent-light)">${k.value}</td>
+        <td>${p ? p.name : '#' + k.product_id}</td>
+        <td><span class="badge ${k.used ? 'off' : 'on'}">${k.used ? 'Used' : 'Unused'}</span></td>
+        <td class="mono" style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${k.hwid || '-'}</td>
+        <td style="font-size:12px;${k.expires_at ? '' : 'color:var(--text-muted)'}">${k.expires_at ? fmtDate(k.expires_at) : 'Never'}</td>
+        <td onclick="event.stopPropagation()"><div class="actions">
+          ${k.used ? '<button onclick="resetKey(' + k.id + ')">Reset</button>' : ''}
+          <button class="del" onclick="deleteKey(' + k.id + ')">Delete</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('keysPageInfo').textContent = `Page ${d.page}/${d.pages} (${d.total} keys)`;
+    document.getElementById('keysPrev').style.display = d.page > 1 ? '' : 'none';
+    document.getElementById('keysNext').style.display = d.page < d.pages ? '' : 'none';
+  } catch {}
+}
+
+async function loadProductsForFilter() {
+  try {
+    const r = await api('/api/products');
+    products = await r.json();
+    const sel = document.getElementById('keyFilter');
+    const mkSel = document.getElementById('mkProduct');
+    const ekSel = document.getElementById('ekProduct');
+    sel.innerHTML = '<option value="">All Products</option>' + products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    if (mkSel) mkSel.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    if (ekSel) ekSel.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  } catch {}
+}
+
+function keysPage(p) { loadKeys(p); }
+
+function showGenKeys() {
+  loadProductsForFilter();
+  document.getElementById('mkCount').value = 1;
+  document.getElementById('mkPrefix').value = 'VX';
+  document.getElementById('mkExpiry').value = '';
+  showModal('modal-genkeys');
+}
+
+async function genKeys() {
+  const body = {
+    product_id: document.getElementById('mkProduct').value,
+    count: document.getElementById('mkCount').value,
+    prefix: document.getElementById('mkPrefix').value.trim() || 'VX',
+    expires_at: document.getElementById('mkExpiry').value || null
+  };
+  if (!body.product_id) return toast('Select a product', 'err');
+  try {
+    const r = await api('/api/keys', { method: 'POST', body: JSON.stringify(body) });
+    const keys = await r.json();
+    closeModal('modal-genkeys');
+    loadKeys();
+    toast(`${keys.length} keys generated`);
+  } catch { toast('Failed', 'err'); }
+}
+
+async function resetKey(id) {
+  try { await api('/api/keys/' + id + '/reset', { method: 'POST' }); loadKeys(keysPageN); toast('Key reset'); } catch { toast('Failed', 'err'); }
+}
+
+async function deleteKey(id) {
+  if (!confirm('Delete this key?')) return;
+  try { await api('/api/keys/' + id, { method: 'DELETE' }); loadKeys(keysPageN); toast('Deleted'); } catch { toast('Failed', 'err'); }
+}
+
+let allKeysCache = [];
+
+async function editKey(kid) {
+  try {
+    if (!allKeysCache.length) { const r = await api('/api/keys?limit=9999'); const d = await r.json(); allKeysCache = d.keys; }
+    const k = allKeysCache.find(x => x.id === kid);
+    if (!k) return toast('Key not found', 'err');
+    document.getElementById('ekId').value = k.id;
+    document.getElementById('ekValue').value = k.value;
+    document.getElementById('ekHwid').value = k.hwid || '';
+    document.getElementById('ekExpiry').value = k.expires_at ? k.expires_at.split('T')[0] : '';
+    document.getElementById('ekStatusBadge').innerHTML = `<span class="badge ${k.used ? 'off' : 'on'}" style="font-size:12px;padding:6px 14px">${k.used ? 'Used' : 'Unused'}</span>`;
+    document.getElementById('ekCreated').textContent = k.created ? fmtDate(k.created) : '-';
+    loadProductsForFilter();
+    setTimeout(() => { document.getElementById('ekProduct').value = k.product_id; }, 50);
+    showModal('modal-keyedit');
+  } catch { toast('Failed to load key', 'err'); }
+}
+
+async function saveEditKey() {
+  const id = document.getElementById('ekId').value;
+  const body = {
+    product_id: +document.getElementById('ekProduct').value,
+    expires_at: document.getElementById('ekExpiry').value || null,
+    hwid: document.getElementById('ekHwid').value.trim()
+  };
+  try {
+    await api('/api/keys/' + id, { method: 'PUT', body: JSON.stringify(body) });
+    allKeysCache = [];
+    closeModal('modal-keyedit');
+    loadKeys(keysPageN);
+    toast('Key updated');
+  } catch { toast('Failed', 'err'); }
+}
+
+async function resetEditKey() {
+  const id = document.getElementById('ekId').value;
+  if (!confirm('Reset HWID? This will unbind the key from the device.')) return;
+  try {
+    await api('/api/keys/' + id + '/reset', { method: 'POST' });
+    document.getElementById('ekHwid').value = '';
+    document.getElementById('ekStatusBadge').innerHTML = '<span class="badge on" style="font-size:12px;padding:6px 14px">Unused</span>';
+    allKeysCache = [];
+    toast('HWID reset');
+  } catch { toast('Failed', 'err'); }
+}
+
+// CLIENTS
+async function loadClients() {
+  try {
+    const r = await api('/api/clients');
+    const d = await r.json();
+    document.getElementById('clientList').innerHTML = d.map(c =>
+      `<tr>
+        <td class="mono" style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis">${c.hwid}</td>
+        <td>${c.product || '-'}</td>
+        <td>${c.visits || 1}</td>
+        <td style="font-size:12px">${fmtDate(c.last_seen)}</td>
+        <td><div class="actions"><button class="del" onclick="deleteClient(${c.id})">Delete</button></div></td>
+      </tr>`
+    ).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">No clients yet</td></tr>';
+  } catch {}
+}
+
+async function deleteClient(id) {
+  if (!confirm('Delete client?')) return;
+  try { await api('/api/clients/' + id, { method: 'DELETE' }); loadClients(); toast('Deleted'); } catch { toast('Failed', 'err'); }
+}
+
+// LOGS
+async function loadLogs(page) {
+  logsPageN = page || 1;
+  try {
+    const r = await api('/api/logs?page=' + logsPageN + '&limit=50');
+    const d = await r.json();
+    document.getElementById('logList').innerHTML = d.logs.map(l =>
+      `<tr>
+        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${fmtDate(l.at)}</td>
+        <td><span class="badge ${l.action.includes('fail') || l.action.includes('delete') ? 'err' : 'on'}">${l.action}</span></td>
+        <td>${l.detail || ''}</td>
+        <td class="mono" style="font-size:11px">${l.ip || ''}</td>
+      </tr>`
+    ).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">No logs</td></tr>';
+    document.getElementById('logsPageInfo').textContent = `Page ${d.page}/${d.pages} (${d.total} logs)`;
+    document.getElementById('logsPrev').style.display = d.page > 1 ? '' : 'none';
+    document.getElementById('logsNext').style.display = d.page < d.pages ? '' : 'none';
+  } catch {}
+}
+
+// SETTINGS
+async function loadSettings() {
+  try {
+    const r = await api('/api/settings');
+    const d = await r.json();
+    document.getElementById('setLauncherVer').value = d.launcher_version || 'v1.0.0';
+    document.getElementById('setGitHubRepo').value = d.github_repo || 'dadamoayu2-coder/vortex';
+  } catch {}
+}
+
+async function saveSettings() {
+  const pairs = [
+    { key: 'launcher_version', value: document.getElementById('setLauncherVer').value.trim() || 'v1.0.0' },
+    { key: 'github_repo', value: document.getElementById('setGitHubRepo').value.trim() || 'dadamoayu2-coder/vortex' }
+  ];
+  try {
+    for (const p of pairs) await api('/api/settings', { method: 'PUT', body: JSON.stringify(p) });
+    toast('Settings saved');
+  } catch { toast('Failed', 'err'); }
+}
+
+async function changePassword() {
+  const c = document.getElementById('pwCurrent').value;
+  const n = document.getElementById('pwNew').value;
+  if (!n || n.length < 3) return toast('Password too short', 'err');
+  try {
+    const r = await api('/api/password', { method: 'POST', body: JSON.stringify({ current: c, password: n }) });
+    if (r.ok) { toast('Password updated'); document.getElementById('pwCurrent').value = ''; document.getElementById('pwNew').value = ''; }
+    else toast('Failed', 'err');
+  } catch { toast('Failed', 'err'); }
+}
+
+// INIT
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+if (token) showPanel();
+</script>
+</body>
+</html>
