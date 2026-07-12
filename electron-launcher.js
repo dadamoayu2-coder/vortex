@@ -1,42 +1,8 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
-const { spawn } = require('child_process');
-const os = require('os');
 
 let mainWindow;
-
-const ALGORITHM = 'aes-256-gcm';
-const KEY_LENGTH = 32;
-const IV_LENGTH = 16;
-const TAG_LENGTH = 16;
-
-function deriveKey(secret) {
-  return crypto.scryptSync(secret, 'vortex-salt-v1', KEY_LENGTH);
-}
-
-function getSecret() {
-  const configPath = path.join(app.getPath('userData'), 'config.json');
-  if (fs.existsSync(configPath)) {
-    try {
-      const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      if (cfg.secret) return cfg.secret;
-    } catch (e) {}
-  }
-  return 'vortex-default-secret-change-me';
-}
-
-function decryptBuffer(encryptedBuffer) {
-  const secret = getSecret();
-  const key = deriveKey(secret);
-  const iv = encryptedBuffer.subarray(0, IV_LENGTH);
-  const tag = encryptedBuffer.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
-  const encrypted = encryptedBuffer.subarray(IV_LENGTH + TAG_LENGTH);
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv, { authTagLength: TAG_LENGTH });
-  decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
-}
 
 function findFreePort() {
   const net = require('net');
@@ -86,47 +52,19 @@ ipcMain.on('close-window', () => {
   if (mainWindow) mainWindow.close();
 });
 
-ipcMain.handle('decrypt-and-run', async (event, encryptedArray, productName) => {
+ipcMain.handle('save-file', async (event, bufferArray, defaultName) => {
   try {
-    const encryptedBuffer = Buffer.from(encryptedArray);
-    const exeBuffer = decryptBuffer(encryptedBuffer);
-
-    const header = exeBuffer.subarray(0, 2).toString('hex');
-    if (header !== '4d5a') {
-      return { success: false, error: 'Invalid executable (corrupted or wrong decryption key)' };
-    }
-
-    const tmpDir = os.tmpdir();
-    const randomName = crypto.randomBytes(16).toString('hex') + '.exe';
-    const tmpPath = path.join(tmpDir, randomName);
-
-    fs.writeFileSync(tmpPath, exeBuffer);
-    fs.chmodSync(tmpPath, 0o755);
-
-    const child = spawn(tmpPath, [], {
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: false
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save Product',
+      defaultPath: defaultName,
+      filters: [
+        { name: 'Vortex Package', extensions: ['vortex'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
     });
-    child.unref();
-
-    setTimeout(() => {
-      try {
-        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-      } catch (e) {}
-    }, 5000);
-
-    setTimeout(() => {
-      try {
-        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-      } catch (e) {}
-    }, 30000);
-
-    child.on('error', () => {
-      try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (e) {}
-    });
-
-    return { success: true, pid: child.pid };
+    if (!filePath) return { success: false, error: 'Cancelled' };
+    fs.writeFileSync(filePath, Buffer.from(bufferArray));
+    return { success: true, path: filePath };
   } catch (e) {
     return { success: false, error: e.message };
   }
