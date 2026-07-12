@@ -1,0 +1,9 @@
+{
+  "name": "vortex",
+  "version": "1.0.0",
+  "outputDirectory": ".",
+  "installCommand": "npm install",
+  "buildCommand": "",
+  "devCommand": "",
+  "framework": null
+}

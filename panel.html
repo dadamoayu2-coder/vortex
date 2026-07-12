@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VORTEX - Panel</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+      <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#9d5cfa"/>
+            <stop offset="100%" style="stop-color:#4a00e0"/>
+          </linearGradient>
+        </defs>
+        <polygon points="50,8 92,30 92,70 50,92 8,70 8,30" fill="none" stroke="url(#lg1)" stroke-width="3"/>
+        <polygon points="50,20 78,36 78,64 50,80 22,64 22,36" fill="url(#lg1)" opacity="0.15"/>
+        <path d="M35 50 L50 30 L65 50 L50 70 Z" fill="url(#lg1)" opacity="0.8"/>
+        <path d="M50 30 L50 14" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M65 50 L80 42" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M50 70 L50 86" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M35 50 L20 58" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <h2>VORTEX</h2>
+      <p>Admin Panel Access</p>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="Enter username" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="Enter password">
+      </div>
+      <div id="loginError" class="login-error"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Sign In
+      </button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#9d5cfa"/><stop offset="100%" style="stop-color:#4a00e0"/></linearGradient></defs>
+          <polygon points="50,8 92,30 92,70 50,92 8,70 8,30" fill="none" stroke="url(#lg2)" stroke-width="3"/>
+          <polygon points="50,20 78,36 78,64 50,80 22,64 22,36" fill="url(#lg2)" opacity="0.15"/>
+          <path d="M35 50 L50 30 L65 50 L50 70 Z" fill="url(#lg2)" opacity="0.8"/>
+        </svg>
+        <div>
+          <div class="brand">VORTEX</div>
+          <div class="brand-tag">Control Panel</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main</div>
+        <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-page="products" onclick="switchPage('products', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>Products</span>
+        </div>
+        <div class="nav-item" data-page="keys" onclick="switchPage('keys', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          <span>Keys</span>
+        </div>
+        <div class="nav-item" data-page="clients" onclick="switchPage('clients', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>Clients</span>
+        </div>
+        <div class="nav-label">System</div>
+        <div class="nav-item" data-page="settings" onclick="switchPage('settings', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span>Settings</span>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="nav-item" onclick="doLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Logout</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="topbar">
+        <div class="topbar-title" id="pageTitle">DASHBOARD</div>
+        <div class="topbar-actions">
+          <div id="serverBanner" style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(123,47,255,0.1);border:1px solid rgba(123,47,255,0.2);border-radius:8px;cursor:pointer" onclick="copyServerUrl()" title="Click to copy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            <span id="tunnelBadge" style="display:none;padding:2px 6px;background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.3);border-radius:4px;font-size:9px;color:var(--success);font-weight:700;letter-spacing:1px">ONLINE</span>
+            <span id="serverUrlText" style="font-family:var(--font-mono);font-size:12px;color:var(--accent-light)">Loading...</span>
+          </div>
+          <a href="/" target="_blank" class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Website
+          </a>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Dashboard -->
+        <div id="page-dashboard" class="page-section active fade-in">
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Products</div>
+              <div class="stat-value" id="statProducts">0</div>
+              <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Keys</div>
+              <div class="stat-value" id="statKeys">0</div>
+              <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Used Keys</div>
+              <div class="stat-value" id="statUsed">0</div>
+              <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Clients</div>
+              <div class="stat-value" id="statActive">0</div>
+              <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            </div>
+          </div>
+          <div class="content-card">
+            <div class="content-card-header">
+              <h3>Recent Activity</h3>
+            </div>
+            <div class="content-card-body">
+              <div id="recentActivity" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <h4>No activity yet</h4>
+                <p>Add products and generate keys to get started</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div id="page-products" class="page-section">
+          <div class="content-card">
+            <div class="content-card-header">
+              <h3>Products</h3>
+              <button class="btn btn-primary btn-sm" onclick="openModal('productModal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Product
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Executable</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTable"></tbody>
+              </table>
+              <div id="productsEmpty" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                <h4>No products</h4>
+                <p>Click "Add Product" to create your first product</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keys -->
+        <div id="page-keys" class="page-section">
+          <div class="content-card">
+            <div class="content-card-header">
+              <h3>Key Management</h3>
+              <div style="display:flex;gap:12px;align-items:center">
+                <select id="keyProductFilter" onchange="loadKeys()" style="padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;">
+                  <option value="">All Products</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="openModal('keyModal')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Generate Keys
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Product</th>
+                    <th>Status</th>
+                    <th>HWID</th>
+                    <th>Expiry</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="keysTable"></tbody>
+              </table>
+              <div id="keysEmpty" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                <h4>No keys</h4>
+                <p>Generate keys for your products</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clients -->
+        <div id="page-clients" class="page-section" style="display:none">
+          <div class="content-card">
+            <div class="content-card-header">
+              <h3>Connected Clients</h3>
+              <button class="btn btn-primary btn-sm" onclick="loadClients()">Refresh</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>HWID</th>
+                    <th>Hostname</th>
+                    <th>Username</th>
+                    <th>OS</th>
+                    <th>CPU</th>
+                    <th>RAM</th>
+                    <th>GPU</th>
+                    <th>Visits</th>
+                    <th>Last Seen</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="clientsTable"></tbody>
+              </table>
+              <div id="clientsEmpty" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                <h4>No clients yet</h4>
+                <p>Client info will appear when keys are verified</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="page-settings" class="page-section">
+          <div class="content-card" style="max-width:600px">
+            <div class="content-card-header">
+              <h3>Site Settings</h3>
+            </div>
+            <div class="content-card-body">
+              <div class="form-group">
+                <label>Site Name</label>
+                <input type="text" id="settingSiteName" placeholder="VORTEX">
+              </div>
+              <div class="form-group">
+                <label>Site URL</label>
+                <input type="text" id="settingSiteUrl" placeholder="http://localhost:3000">
+              </div>
+              <div class="form-group">
+                <label>Access Code (leave empty to disable)</label>
+                <input type="text" id="settingAccessCode" placeholder="Optional access code">
+                <div class="hint">If set, users must enter this code via URL parameter ?code=xxx to access the site</div>
+              </div>
+              <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            </div>
+          </div>
+
+          <div class="content-card" style="max-width:600px;margin-top:24px">
+            <div class="content-card-header">
+              <h3>Change Password</h3>
+            </div>
+            <div class="content-card-body">
+              <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPassword" placeholder="Enter new password">
+              </div>
+              <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div id="productModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Product</h3>
+        <button class="modal-close" onclick="closeModal('productModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="prodName" placeholder="e.g. VORTEX Aim">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="prodDesc" placeholder="Product description..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Icon (emoji or text)</label>
+          <input type="text" id="prodIcon" placeholder="e.g. ⚡">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('productModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="addProduct()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal -->
+  <div id="editProductModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Product</h3>
+        <button class="modal-close" onclick="closeModal('editProductModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editProdId">
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="editProdName">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="editProdDesc"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Icon</label>
+          <input type="text" id="editProdIcon">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="editProdStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Upload Executable (.exe)</label>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('exeFile').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Click to upload or drag & drop</p>
+            <div class="hint">Executable files (.exe) up to 500MB</div>
+          </div>
+          <input type="file" id="exeFile" accept=".exe" style="display:none" onchange="uploadExe()">
+          <div id="exeFileName" class="hint" style="margin-top:8px"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('editProductModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="updateProduct()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate Keys Modal -->
+  <div id="keyModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Generate Keys</h3>
+        <button class="modal-close" onclick="closeModal('keyModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Select Product</label>
+          <select id="keyProduct"></select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="keyCount" value="1" min="1" max="100">
+        </div>
+        <div class="form-group">
+          <label>Key Prefix (optional)</label>
+          <input type="text" id="keyPrefix" placeholder="e.g. VORTEX">
+          <div class="hint">Leave empty for default VORTEX- prefix</div>
+        </div>
+        <div class="form-group">
+          <label>Expiry Duration</label>
+          <div id="expiryBtns" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button type="button" class="btn btn-ghost btn-sm expiry-btn active" data-days="0" onclick="setExpiry(this)">No Expiry</button>
+            <button type="button" class="btn btn-ghost btn-sm expiry-btn" data-days="1" onclick="setExpiry(this)">1 Day</button>
+            <button type="button" class="btn btn-ghost btn-sm expiry-btn" data-days="7" onclick="setExpiry(this)">7 Days</button>
+            <button type="button" class="btn btn-ghost btn-sm expiry-btn" data-days="30" onclick="setExpiry(this)">30 Days</button>
+            <button type="button" class="btn btn-ghost btn-sm expiry-btn" data-days="90" onclick="setExpiry(this)">90 Days</button>
+            <button type="button" class="btn btn-ghost btn-sm expiry-btn" data-days="180" onclick="setExpiry(this)">180 Days</button>
+            <button type="button" class="btn btn-ghost btn-sm expiry-btn" data-days="365" onclick="setExpiry(this)">1 Year</button>
+          </div>
+          <div id="expiryCustom" style="display:none;margin-top:4px">
+            <input type="date" id="keyExpiryDate" style="padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none">
+          </div>
+          <div class="hint" id="expiryHint">No expiration</div>
+          <input type="hidden" id="keyExpiry" value="">
+        </div>
+        <div id="generatedKeys" class="hidden">
+          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block">Generated Keys</label>
+          <div id="keyList" class="key-display"></div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:12px" onclick="copyAllKeys()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy All
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('keyModal')">Close</button>
+        <button class="btn btn-primary" id="generateBtn" onclick="generateKeys()">Generate</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <style>
+    .expiry-btn.active {
+      background: var(--accent) !important;
+      color: #fff !important;
+      border-color: var(--accent) !important;
+    }
+    .expiry-btn:hover {
+      border-color: var(--accent);
+    }
+  </style>
+
+  <script>
+    let token = localStorage.getItem('vortex_token');
+    let products = [];
+
+    async function api(url, options = {}) {
+      const headers = { 'Content-Type': 'application/json', ...options.headers };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(url, { ...options, headers });
+      if (res.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+      return res.json();
+    }
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast toast-${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function switchPage(page, el) {
+      document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(`page-${page}`).classList.add('active');
+      document.getElementById(`page-${page}`).classList.add('fade-in');
+      if (el) el.classList.add('active');
+      document.getElementById('pageTitle').textContent = page.toUpperCase();
+      if (page === 'products') loadProducts();
+      if (page === 'keys') { loadProducts().then(() => loadKeys()); }
+      if (page === 'settings') loadSettings();
+      if (page === 'dashboard') loadDashboard();
+      if (page === 'clients') loadClients();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    async function doLogin() {
+      const user = document.getElementById('loginUser').value;
+      const pass = document.getElementById('loginPass').value;
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user, password: pass })
+        });
+        const data = await res.json();
+        if (data.success) {
+          token = data.token;
+          localStorage.setItem('vortex_token', token);
+          showApp();
+        } else {
+          document.getElementById('loginError').textContent = data.error || 'Invalid credentials';
+          document.getElementById('loginError').style.display = 'block';
+        }
+      } catch (e) {
+        document.getElementById('loginError').textContent = 'Connection error';
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    function doLogout() {
+      token = null;
+      localStorage.removeItem('vortex_token');
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('loginOverlay').style.display = 'flex';
+    }
+
+    async function showApp() {
+      try {
+        await api('/api/auth/check');
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('app').classList.remove('hidden');
+        loadDashboard();
+      } catch {
+        doLogout();
+      }
+    }
+
+    async function loadDashboard() {
+      const d = await api('/api/dashboard');
+      document.getElementById('statProducts').textContent = d.totalProducts;
+      document.getElementById('statKeys').textContent = d.totalKeys;
+      document.getElementById('statUsed').textContent = d.activeKeys;
+      document.getElementById('statActive').textContent = d.totalClients;
+
+      const prods = await api('/api/products');
+      const act = document.getElementById('recentActivity');
+      if (prods.length === 0) {
+        act.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><h4>No activity yet</h4><p>Add products and generate keys to get started</p></div>';
+      } else {
+        let html = '';
+        prods.slice(0, 5).forEach(p => {
+          html += `<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+            <span style="font-size:20px">${p.icon || '📦'}</span>
+            <div><strong>${p.name}</strong> <span class="badge ${p.status === 'active' ? 'badge-active' : 'badge-inactive'}" style="margin-left:8px">${p.status}</span></div>
+          </div>`;
+        });
+        act.innerHTML = html;
+      }
+    }
+
+    async function loadProducts() {
+      products = await api('/api/products');
+      const tbody = document.getElementById('productsTable');
+      const empty = document.getElementById('productsEmpty');
+      const filter = document.getElementById('keyProductFilter');
+      const keyProd = document.getElementById('keyProduct');
+
+      if (products.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      tbody.innerHTML = products.map(p => `
+        <tr>
+          <td><strong style="color:var(--text-primary)">${p.icon || '📦'} ${p.name}</strong></td>
+          <td>${p.description || '-'}</td>
+          <td><span class="badge ${p.status === 'active' ? 'badge-active' : 'badge-inactive'}">${p.status}</span></td>
+          <td>${p.exe_filename ? `<span style="color:var(--success)">${p.exe_filename}</span>` : '<span style="color:var(--text-muted)">Not set</span>'}</td>
+          <td>
+            <button class="btn btn-ghost btn-sm" onclick="editProduct(${p.id})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+
+      const options = products.map(p => `<option value="${p.id}">${p.icon || ''} ${p.name}</option>`).join('');
+      filter.innerHTML = '<option value="">All Products</option>' + options;
+      keyProd.innerHTML = options;
+    }
+
+    async function loadClients() {
+      const clients = await api('/api/clients');
+      const tbody = document.getElementById('clientsTable');
+      const empty = document.getElementById('clientsEmpty');
+      if (clients.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      tbody.innerHTML = clients.map(c => `
+        <tr>
+          <td><code style="color:var(--accent);font-size:12px">${c.hwid}</code></td>
+          <td>${c.hostname}</td>
+          <td>${c.username}</td>
+          <td>${c.platform} ${c.arch}</td>
+          <td style="font-size:12px">${c.cpu}</td>
+          <td>${c.totalMem}</td>
+          <td style="font-size:12px">${c.gpu}</td>
+          <td><span class="badge badge-active">${c.visits || 1}</span></td>
+          <td style="font-size:12px">${new Date(c.last_seen).toLocaleString()}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteClient(${c.id})">Delete</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function deleteClient(id) {
+      if (!confirm('Delete this client?')) return;
+      await api(`/api/clients/${id}`, { method: 'DELETE' });
+      showToast('Client removed');
+      loadClients();
+    }
+
+    async function addProduct() {
+      const name = document.getElementById('prodName').value;
+      const description = document.getElementById('prodDesc').value;
+      const icon = document.getElementById('prodIcon').value;
+      if (!name) return showToast('Name is required', 'error');
+      await api('/api/products', { method: 'POST', body: JSON.stringify({ name, description, icon }) });
+      closeModal('productModal');
+      document.getElementById('prodName').value = '';
+      document.getElementById('prodDesc').value = '';
+      document.getElementById('prodIcon').value = '';
+      showToast('Product created');
+      loadProducts();
+    }
+
+    function editProduct(id) {
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('editProdId').value = p.id;
+      document.getElementById('editProdName').value = p.name;
+      document.getElementById('editProdDesc').value = p.description;
+      document.getElementById('editProdIcon').value = p.icon;
+      document.getElementById('editProdStatus').value = p.status;
+      document.getElementById('exeFileName').textContent = p.exe_filename ? `Current: ${p.exe_filename}` : '';
+      openModal('editProductModal');
+    }
+
+    async function updateProduct() {
+      const id = document.getElementById('editProdId').value;
+      await api(`/api/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: document.getElementById('editProdName').value,
+          description: document.getElementById('editProdDesc').value,
+          icon: document.getElementById('editProdIcon').value,
+          status: document.getElementById('editProdStatus').value
+        })
+      });
+      closeModal('editProductModal');
+      showToast('Product updated');
+      loadProducts();
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Delete this product and all its keys?')) return;
+      await api(`/api/products/${id}`, { method: 'DELETE' });
+      showToast('Product deleted');
+      loadProducts();
+    }
+
+    async function uploadExe() {
+      const id = document.getElementById('editProdId').value;
+      const file = document.getElementById('exeFile').files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('exe', file);
+      const res = await fetch(`/api/products/${id}/exe`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('exeFileName').textContent = `Uploaded: ${file.name}`;
+        showToast('Executable uploaded');
+        loadProducts();
+      }
+    }
+
+    async function loadKeys() {
+      const filter = document.getElementById('keyProductFilter').value;
+      let allKeys = [];
+      const prodsToLoad = filter ? products.filter(p => p.id == filter) : products;
+      for (const p of prodsToLoad) {
+        const keys = await api(`/api/products/${p.id}/keys`);
+        keys.forEach(k => { k.product_name = p.name; k.product_icon = p.icon; allKeys.push(k); });
+      }
+
+      const tbody = document.getElementById('keysTable');
+      const empty = document.getElementById('keysEmpty');
+      if (allKeys.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      tbody.innerHTML = allKeys.slice(0, 200).map(k => {
+        const expDisplay = k.expires_at
+          ? (new Date(k.expires_at) < new Date()
+            ? '<span style="color:var(--danger)">Expired</span>'
+            : `<span style="color:var(--warning)">${new Date(k.expires_at).toLocaleDateString()}</span>`)
+          : '<span style="color:var(--text-muted)">None</span>';
+        return `
+        <tr>
+          <td><code style="color:var(--accent-light);font-size:13px;letter-spacing:1px">${k.key_value}</code></td>
+          <td>${k.product_icon || ''} ${k.product_name}</td>
+          <td><span class="badge ${k.is_used ? 'badge-used' : 'badge-unused'}">${k.is_used ? 'Used' : 'Unused'}</span></td>
+          <td style="font-size:12px;color:var(--text-muted)">${k.hwid || '-'}</td>
+          <td style="font-size:12px">${expDisplay}</td>
+          <td style="font-size:12px">${new Date(k.created_at).toLocaleDateString()}</td>
+          <td>
+            <button class="btn btn-ghost btn-sm" onclick="editKeyExpiry(${k.id}, '${k.expires_at || ''}')">Expiry</button>
+            <button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key_value}')">Copy</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteKey(${k.id})">Delete</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function generateKeys() {
+      const productId = document.getElementById('keyProduct').value;
+      const count = parseInt(document.getElementById('keyCount').value) || 1;
+      const prefix = document.getElementById('keyPrefix').value;
+      const expiryInput = document.getElementById('keyExpiry').value;
+      const expires_at = expiryInput ? new Date(expiryInput).toISOString() : null;
+      if (!productId) return showToast('Select a product', 'error');
+
+      const data = await api(`/api/products/${productId}/keys`, {
+        method: 'POST',
+        body: JSON.stringify({ count, prefix, expires_at })
+      });
+
+      const genDiv = document.getElementById('generatedKeys');
+      genDiv.classList.remove('hidden');
+      document.getElementById('keyList').innerHTML = data.keys.map(k =>
+        `<div class="key-item"><span>${k}</span><button class="copy-btn" onclick="copyKey('${k}')">📋</button></div>`
+      ).join('');
+      showToast(`${data.keys.length} keys generated`);
+      loadKeys();
+    }
+
+    function copyKey(key) {
+      navigator.clipboard.writeText(key);
+      showToast('Key copied');
+    }
+
+    function copyAllKeys() {
+      const keys = Array.from(document.querySelectorAll('.key-item span')).map(s => s.textContent).join('\n');
+      navigator.clipboard.writeText(keys);
+      showToast('All keys copied');
+    }
+
+    async function deleteKey(id) {
+      if (!confirm('Delete this key?')) return;
+      await api(`/api/keys/${id}`, { method: 'DELETE' });
+      showToast('Key deleted');
+      loadKeys();
+    }
+
+    async function loadSettings() {
+      const settings = await api('/api/settings');
+      document.getElementById('settingSiteName').value = settings.site_name || 'VORTEX';
+      document.getElementById('settingSiteUrl').value = settings.site_url || '';
+      document.getElementById('settingAccessCode').value = settings.access_code || '';
+    }
+
+    async function saveSettings() {
+      const settings = [
+        { key: 'site_name', value: document.getElementById('settingSiteName').value },
+        { key: 'site_url', value: document.getElementById('settingSiteUrl').value },
+        { key: 'access_code', value: document.getElementById('settingAccessCode').value }
+      ];
+      for (const s of settings) {
+        await api('/api/settings', { method: 'PUT', body: JSON.stringify(s) });
+      }
+      showToast('Settings saved');
+    }
+
+    document.getElementById('loginPass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    if (token) showApp();
+
+    async function editKeyExpiry(keyId, currentExpiry) {
+      const dateStr = currentExpiry ? currentExpiry.slice(0, 10) : '';
+      const input = prompt('Enter expiry date (YYYY-MM-DD) or leave empty to remove:', dateStr);
+      if (input === null) return;
+      const expires_at = input ? new Date(input + 'T23:59:59').toISOString() : null;
+      await api(`/api/keys/${keyId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ expires_at })
+      });
+      showToast('Expiry updated');
+      loadKeys();
+    }
+
+    function setExpiry(btn) {
+      document.querySelectorAll('.expiry-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const days = parseInt(btn.dataset.days);
+      const custom = document.getElementById('expiryCustom');
+      const hint = document.getElementById('expiryHint');
+      const hidden = document.getElementById('keyExpiry');
+      if (days === 0) {
+        custom.style.display = 'none';
+        hidden.value = '';
+        hint.textContent = 'No expiration';
+      } else {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        hidden.value = d.toISOString();
+        hint.textContent = 'Expires: ' + d.toLocaleDateString();
+        custom.style.display = 'none';
+      }
+    }
+
+    document.getElementById('keyExpiryDate').addEventListener('change', function() {
+      if (this.value) {
+        const d = new Date(this.value + 'T23:59:59');
+        document.getElementById('keyExpiry').value = d.toISOString();
+        document.getElementById('expiryHint').textContent = 'Expires: ' + d.toLocaleDateString();
+        document.querySelectorAll('.expiry-btn').forEach(b => b.classList.remove('active'));
+      }
+    });
+
+    async function changePassword() {
+      const newPass = document.getElementById('newPassword').value;
+      if (!newPass) return showToast('Enter a new password', 'error');
+      await api('/api/settings', { method: 'PUT', body: JSON.stringify({ key: 'admin_password', value: newPass }) });
+      document.getElementById('newPassword').value = '';
+      showToast('Password updated');
+    }
+
+    let currentTunnelUrl = '';
+
+    async function loadServerInfo() {
+      try {
+        const res = await api('/api/server-info');
+        if (res.tunnelUrl) {
+          currentTunnelUrl = res.tunnelUrl;
+          document.getElementById('serverUrlText').textContent = res.tunnelUrl;
+          document.getElementById('serverBanner').title = `Click to copy: ${res.tunnelUrl}`;
+          document.getElementById('tunnelBadge').style.display = 'inline';
+        } else {
+          const url = res.url || `http://${res.ip}:${res.port}`;
+          document.getElementById('serverUrlText').textContent = url;
+          document.getElementById('serverBanner').title = `Click to copy: ${url}`;
+          document.getElementById('tunnelBadge').style.display = 'none';
+        }
+      } catch (e) {
+        document.getElementById('serverUrlText').textContent = window.location.origin;
+      }
+    }
+
+    function copyServerUrl() {
+      const url = currentTunnelUrl || document.getElementById('serverUrlText').textContent;
+      navigator.clipboard.writeText(url).then(() => showToast('URL copied!')).catch(() => {});
+    }
+
+    if (token) { loadDashboard(); loadServerInfo(); setInterval(loadServerInfo, 10000); }
+  </script>
+</body>
+</html>
