@@ -3,8 +3,18 @@ services:
     name: vortex
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install --production
     startCommand: node server/index.js
     envVars:
       - key: NODE_ENV
         value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: VORTEX_SECRET
+        generateValue: true
+      - key: DATA_DIR
+        value: /data
+    disk:
+      name: vortex-data
+      mountPath: /data
+      sizeGB: 1

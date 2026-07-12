@@ -76,6 +76,10 @@
           <span>Clients</span>
         </div>
         <div class="nav-label">System</div>
+        <div class="nav-item" data-page="logs" onclick="switchPage('logs', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Logs</span>
+        </div>
         <div class="nav-item" data-page="settings" onclick="switchPage('settings', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           <span>Settings</span>
@@ -120,7 +124,7 @@
               <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Used Keys</div>
+              <div class="stat-label">Active Keys</div>
               <div class="stat-value" id="statUsed">0</div>
               <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
@@ -128,6 +132,11 @@
               <div class="stat-label">Clients</div>
               <div class="stat-value" id="statActive">0</div>
               <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Online Now</div>
+              <div class="stat-value" id="statOnline">0</div>
+              <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
             </div>
           </div>
           <div class="content-card">
@@ -159,6 +168,7 @@
                 <thead>
                   <tr>
                     <th>Name</th>
+                    <th>Version</th>
                     <th>Description</th>
                     <th>Status</th>
                     <th>Executable</th>
@@ -181,8 +191,9 @@
           <div class="content-card">
             <div class="content-card-header">
               <h3>Key Management</h3>
-              <div style="display:flex;gap:12px;align-items:center">
-                <select id="keyProductFilter" onchange="loadKeys()" style="padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;">
+              <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                <input type="text" id="keySearchInput" placeholder="Search keys..." style="padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;width:200px" oninput="debounceKeySearch()">
+                <select id="keyProductFilter" onchange="loadKeys(1)" style="padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;">
                   <option value="">All Products</option>
                 </select>
                 <button class="btn btn-primary btn-sm" onclick="openModal('keyModal')">
@@ -212,6 +223,7 @@
                 <p>Generate keys for your products</p>
               </div>
             </div>
+            <div id="keysPagination" class="pagination-wrap" style="display:none"></div>
           </div>
         </div>
 
@@ -249,6 +261,35 @@
           </div>
         </div>
 
+        <!-- Logs -->
+        <div id="page-logs" class="page-section">
+          <div class="content-card">
+            <div class="content-card-header">
+              <h3>System Logs</h3>
+              <button class="btn btn-primary btn-sm" onclick="loadLogs(1)">Refresh</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Action</th>
+                    <th>Detail</th>
+                    <th>IP</th>
+                    <th>Created At</th>
+                  </tr>
+                </thead>
+                <tbody id="logsTable"></tbody>
+              </table>
+              <div id="logsEmpty" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <h4>No logs yet</h4>
+                <p>System activity will appear here</p>
+              </div>
+            </div>
+            <div id="logsPagination" class="pagination-wrap" style="display:none"></div>
+          </div>
+        </div>
+
         <!-- Settings -->
         <div id="page-settings" class="page-section">
           <div class="content-card" style="max-width:600px">
@@ -269,6 +310,11 @@
                 <input type="text" id="settingAccessCode" placeholder="Optional access code">
                 <div class="hint">If set, users must enter this code via URL parameter ?code=xxx to access the site</div>
               </div>
+              <div class="form-group">
+                <label>Product Version</label>
+                <input type="text" id="settingProductVersion" placeholder="e.g. 1.0.0">
+                <div class="hint">Default version assigned to new products</div>
+              </div>
               <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
             </div>
           </div>
@@ -278,6 +324,10 @@
               <h3>Change Password</h3>
             </div>
             <div class="content-card-body">
+              <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" id="currentPassword" placeholder="Enter current password">
+              </div>
               <div class="form-group">
                 <label>New Password</label>
                 <input type="password" id="newPassword" placeholder="Enter new password">
@@ -307,6 +357,10 @@
           <textarea id="prodDesc" placeholder="Product description..."></textarea>
         </div>
         <div class="form-group">
+          <label>Version</label>
+          <input type="text" id="prodVersion" placeholder="e.g. 1.0.0">
+        </div>
+        <div class="form-group">
           <label>Icon (emoji or text)</label>
           <input type="text" id="prodIcon" placeholder="e.g. ⚡">
         </div>
@@ -334,6 +388,10 @@
         <div class="form-group">
           <label>Description</label>
           <textarea id="editProdDesc"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Version</label>
+          <input type="text" id="editProdVersion" placeholder="e.g. 1.0.0">
         </div>
         <div class="form-group">
           <label>Icon</label>
@@ -429,11 +487,52 @@
     .expiry-btn:hover {
       border-color: var(--accent);
     }
+    .pagination-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .pagination-wrap button {
+      padding: 6px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .pagination-wrap button:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+    .pagination-wrap button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .pagination-wrap button.active-page {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .pagination-info {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 0 8px;
+    }
   </style>
 
   <script>
     let token = localStorage.getItem('vortex_token');
     let products = [];
+    let keySearchTimeout = null;
+    let currentKeysPage = 1;
+    let currentLogsPage = 1;
 
     async function api(url, options = {}) {
       const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -458,10 +557,11 @@
       if (el) el.classList.add('active');
       document.getElementById('pageTitle').textContent = page.toUpperCase();
       if (page === 'products') loadProducts();
-      if (page === 'keys') { loadProducts().then(() => loadKeys()); }
+      if (page === 'keys') { loadProducts().then(() => loadKeys(1)); }
       if (page === 'settings') loadSettings();
       if (page === 'dashboard') loadDashboard();
       if (page === 'clients') loadClients();
+      if (page === 'logs') loadLogs(1);
     }
 
     function openModal(id) { document.getElementById(id).classList.add('show'); }
@@ -515,20 +615,22 @@
       document.getElementById('statKeys').textContent = d.totalKeys;
       document.getElementById('statUsed').textContent = d.activeKeys;
       document.getElementById('statActive').textContent = d.totalClients;
+      document.getElementById('statOnline').textContent = d.onlineClients || 0;
 
-      const prods = await api('/api/products');
       const act = document.getElementById('recentActivity');
-      if (prods.length === 0) {
-        act.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><h4>No activity yet</h4><p>Add products and generate keys to get started</p></div>';
-      } else {
+      if (d.recentLogs && d.recentLogs.length > 0) {
         let html = '';
-        prods.slice(0, 5).forEach(p => {
-          html += `<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
-            <span style="font-size:20px">${p.icon || '📦'}</span>
-            <div><strong>${p.name}</strong> <span class="badge ${p.status === 'active' ? 'badge-active' : 'badge-inactive'}" style="margin-left:8px">${p.status}</span></div>
+        d.recentLogs.slice(0, 10).forEach(log => {
+          const time = new Date(log.created_at).toLocaleString();
+          html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+            <span style="font-size:14px;color:var(--accent-light);min-width:120px;font-weight:600">${log.action}</span>
+            <div style="flex:1;font-size:13px;color:var(--text-secondary)">${log.detail || ''}</div>
+            <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">${time}</span>
           </div>`;
         });
         act.innerHTML = html;
+      } else {
+        act.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><h4>No activity yet</h4><p>Add products and generate keys to get started</p></div>';
       }
     }
 
@@ -549,6 +651,7 @@
       tbody.innerHTML = products.map(p => `
         <tr>
           <td><strong style="color:var(--text-primary)">${p.icon || '📦'} ${p.name}</strong></td>
+          <td>${p.version || '<span style="color:var(--text-muted)">-</span>'}</td>
           <td>${p.description || '-'}</td>
           <td><span class="badge ${p.status === 'active' ? 'badge-active' : 'badge-inactive'}">${p.status}</span></td>
           <td>${p.exe_filename ? `<span style="color:var(--success)">${p.exe_filename}</span>` : '<span style="color:var(--text-muted)">Not set</span>'}</td>
@@ -596,12 +699,14 @@
     async function addProduct() {
       const name = document.getElementById('prodName').value;
       const description = document.getElementById('prodDesc').value;
+      const version = document.getElementById('prodVersion').value;
       const icon = document.getElementById('prodIcon').value;
       if (!name) return showToast('Name is required', 'error');
-      await api('/api/products', { method: 'POST', body: JSON.stringify({ name, description, icon }) });
+      await api('/api/products', { method: 'POST', body: JSON.stringify({ name, description, icon, version }) });
       closeModal('productModal');
       document.getElementById('prodName').value = '';
       document.getElementById('prodDesc').value = '';
+      document.getElementById('prodVersion').value = '';
       document.getElementById('prodIcon').value = '';
       showToast('Product created');
       loadProducts();
@@ -613,6 +718,7 @@
       document.getElementById('editProdId').value = p.id;
       document.getElementById('editProdName').value = p.name;
       document.getElementById('editProdDesc').value = p.description;
+      document.getElementById('editProdVersion').value = p.version || '';
       document.getElementById('editProdIcon').value = p.icon;
       document.getElementById('editProdStatus').value = p.status;
       document.getElementById('exeFileName').textContent = p.exe_filename ? `Current: ${p.exe_filename}` : '';
@@ -626,6 +732,7 @@
         body: JSON.stringify({
           name: document.getElementById('editProdName').value,
           description: document.getElementById('editProdDesc').value,
+          version: document.getElementById('editProdVersion').value,
           icon: document.getElementById('editProdIcon').value,
           status: document.getElementById('editProdStatus').value
         })
@@ -661,25 +768,33 @@
       }
     }
 
-    async function loadKeys() {
-      const filter = document.getElementById('keyProductFilter').value;
-      let allKeys = [];
-      const prodsToLoad = filter ? products.filter(p => p.id == filter) : products;
-      for (const p of prodsToLoad) {
-        const keys = await api(`/api/products/${p.id}/keys`);
-        keys.forEach(k => { k.product_name = p.name; k.product_icon = p.icon; allKeys.push(k); });
-      }
+    function debounceKeySearch() {
+      clearTimeout(keySearchTimeout);
+      keySearchTimeout = setTimeout(() => loadKeys(1), 300);
+    }
 
+    async function loadKeys(page = 1) {
+      currentKeysPage = page;
+      const filter = document.getElementById('keyProductFilter').value;
+      const search = document.getElementById('keySearchInput').value;
+      let url = `/api/keys?page=${page}&limit=50`;
+      if (filter) url += `&product_id=${filter}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+
+      const data = await api(url);
+      const keys = data.keys || [];
       const tbody = document.getElementById('keysTable');
       const empty = document.getElementById('keysEmpty');
-      if (allKeys.length === 0) {
+
+      if (keys.length === 0) {
         tbody.innerHTML = '';
         empty.style.display = 'block';
+        document.getElementById('keysPagination').style.display = 'none';
         return;
       }
       empty.style.display = 'none';
 
-      tbody.innerHTML = allKeys.slice(0, 200).map(k => {
+      tbody.innerHTML = keys.map(k => {
         const expDisplay = k.expires_at
           ? (new Date(k.expires_at) < new Date()
             ? '<span style="color:var(--danger)">Expired</span>'
@@ -688,7 +803,7 @@
         return `
         <tr>
           <td><code style="color:var(--accent-light);font-size:13px;letter-spacing:1px">${k.key_value}</code></td>
-          <td>${k.product_icon || ''} ${k.product_name}</td>
+          <td>${k.product_icon || ''} ${k.product_name || ''}</td>
           <td><span class="badge ${k.is_used ? 'badge-used' : 'badge-unused'}">${k.is_used ? 'Used' : 'Unused'}</span></td>
           <td style="font-size:12px;color:var(--text-muted)">${k.hwid || '-'}</td>
           <td style="font-size:12px">${expDisplay}</td>
@@ -700,6 +815,67 @@
           </td>
         </tr>`;
       }).join('');
+
+      renderPagination('keysPagination', data.page, data.pages, data.total, loadKeys);
+    }
+
+    function renderPagination(containerId, currentPage, totalPages, total, loadFn) {
+      const container = document.getElementById(containerId);
+      if (totalPages <= 1) { container.style.display = 'none'; return; }
+      container.style.display = 'flex';
+
+      let html = '';
+      html += `<button ${currentPage <= 1 ? 'disabled' : ''} onclick="window._pagFn_${containerId}(${currentPage - 1})">&laquo; Prev</button>`;
+
+      const start = Math.max(1, currentPage - 2);
+      const end = Math.min(totalPages, currentPage + 2);
+
+      if (start > 1) {
+        html += `<button onclick="window._pagFn_${containerId}(1)">1</button>`;
+        if (start > 2) html += `<span class="pagination-info">...</span>`;
+      }
+
+      for (let i = start; i <= end; i++) {
+        html += `<button class="${i === currentPage ? 'active-page' : ''}" onclick="window._pagFn_${containerId}(${i})">${i}</button>`;
+      }
+
+      if (end < totalPages) {
+        if (end < totalPages - 1) html += `<span class="pagination-info">...</span>`;
+        html += `<button onclick="window._pagFn_${containerId}(${totalPages})">${totalPages}</button>`;
+      }
+
+      html += `<button ${currentPage >= totalPages ? 'disabled' : ''} onclick="window._pagFn_${containerId}(${currentPage + 1})">Next &raquo;</button>`;
+      html += `<span class="pagination-info">${total} total</span>`;
+
+      container.innerHTML = html;
+      window[`_pagFn_${containerId}`] = loadFn;
+    }
+
+    async function loadLogs(page = 1) {
+      currentLogsPage = page;
+      const data = await api(`/api/logs?page=${page}&limit=50`);
+      const logs = data.logs || [];
+      const tbody = document.getElementById('logsTable');
+      const empty = document.getElementById('logsEmpty');
+
+      if (logs.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        document.getElementById('logsPagination').style.display = 'none';
+        return;
+      }
+      empty.style.display = 'none';
+
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td><span class="badge badge-active" style="font-size:12px">${log.action}</span></td>
+          <td style="font-size:13px;color:var(--text-secondary);max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${log.detail || '-'}</td>
+          <td style="font-size:12px;color:var(--text-muted)"><code>${log.ip || '-'}</code></td>
+          <td style="font-size:12px">${new Date(log.created_at).toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      renderPagination('logsPagination', data.page, data.pages, data.total, loadLogs);
     }
 
     async function generateKeys() {
@@ -721,7 +897,7 @@
         `<div class="key-item"><span>${k}</span><button class="copy-btn" onclick="copyKey('${k}')">📋</button></div>`
       ).join('');
       showToast(`${data.keys.length} keys generated`);
-      loadKeys();
+      loadKeys(1);
     }
 
     function copyKey(key) {
@@ -739,7 +915,7 @@
       if (!confirm('Delete this key?')) return;
       await api(`/api/keys/${id}`, { method: 'DELETE' });
       showToast('Key deleted');
-      loadKeys();
+      loadKeys(currentKeysPage);
     }
 
     async function loadSettings() {
@@ -747,13 +923,15 @@
       document.getElementById('settingSiteName').value = settings.site_name || 'VORTEX';
       document.getElementById('settingSiteUrl').value = settings.site_url || '';
       document.getElementById('settingAccessCode').value = settings.access_code || '';
+      document.getElementById('settingProductVersion').value = settings.product_version || '';
     }
 
     async function saveSettings() {
       const settings = [
         { key: 'site_name', value: document.getElementById('settingSiteName').value },
         { key: 'site_url', value: document.getElementById('settingSiteUrl').value },
-        { key: 'access_code', value: document.getElementById('settingAccessCode').value }
+        { key: 'access_code', value: document.getElementById('settingAccessCode').value },
+        { key: 'product_version', value: document.getElementById('settingProductVersion').value }
       ];
       for (const s of settings) {
         await api('/api/settings', { method: 'PUT', body: JSON.stringify(s) });
@@ -777,7 +955,7 @@
         body: JSON.stringify({ expires_at })
       });
       showToast('Expiry updated');
-      loadKeys();
+      loadKeys(currentKeysPage);
     }
 
     function setExpiry(btn) {
@@ -810,9 +988,13 @@
     });
 
     async function changePassword() {
+      const currentPass = document.getElementById('currentPassword').value;
       const newPass = document.getElementById('newPassword').value;
+      if (!currentPass) return showToast('Enter your current password', 'error');
       if (!newPass) return showToast('Enter a new password', 'error');
-      await api('/api/settings', { method: 'PUT', body: JSON.stringify({ key: 'admin_password', value: newPass }) });
+      const res = await api('/api/change-password', { method: 'POST', body: JSON.stringify({ currentPassword: currentPass, password: newPass }) });
+      if (res.error) return showToast(res.error, 'error');
+      document.getElementById('currentPassword').value = '';
       document.getElementById('newPassword').value = '';
       showToast('Password updated');
     }

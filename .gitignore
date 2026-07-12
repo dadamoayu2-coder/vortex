@@ -3,6 +3,7 @@ dist/
 data/
 .env
 .env.*
+!.env.example
 *.exe
 *.dll
 *.pak
@@ -18,8 +19,5 @@ vortex.json
 vortex.db
 *.obj
 *.log
-*.cpp
-*.h
-*.pfx
-build.bat
 nlohmann/
+server.pfx

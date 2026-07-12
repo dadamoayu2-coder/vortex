@@ -1,0 +1,20 @@
+{
+  "appId": "com.vortex.launcher",
+  "productName": "VORTEX",
+  "directories": { "output": "dist" },
+  "files": [
+    "electron-launcher.js",
+    "public/css/**/*",
+    "public/launcher.html",
+    "!node_modules/.cache"
+  ],
+  "win": {
+    "target": [
+      { "target": "portable", "arch": ["x64"] }
+    ],
+    "icon": null
+  },
+  "portable": {
+    "artifactName": "VORTEX.exe"
+  }
+}
