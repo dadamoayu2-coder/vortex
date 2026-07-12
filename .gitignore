@@ -16,3 +16,10 @@ public/uploads/*
 !public/uploads/.gitkeep
 vortex.json
 vortex.db
+*.obj
+*.log
+*.cpp
+*.h
+*.pfx
+build.bat
+nlohmann/
